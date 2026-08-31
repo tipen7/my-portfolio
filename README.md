@@ -25,5 +25,6 @@
 - [x] Created `templates/` folder for html (`index/html`)
 - [x] Reconfigure the project structure `myportofolio` -> `portofolio`
 - [x] Changed some setup matching the `portofolio` directory name
+- [x] Updated .env.prod for deployment
 
 ---
