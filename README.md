@@ -21,4 +21,9 @@
 - [x] Configured baseline settings in `settings.py`
 - [x] Styled and reformatted README.md
 
+- [x] Created `static/` folder to hold css (`static/css/`) and images (`static/img/`)
+- [x] Created `templates/` folder for html (`index/html`)
+- [x] Reconfigure the project structure `myportofolio` -> `portofolio`
+- [x] Changed some setup matching the `portofolio` directory name
+
 ---
