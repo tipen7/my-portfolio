@@ -1,7 +1,24 @@
-Nama  : Steven Dyanizha Ananda
+# My Portfolio Project
+---
 
-NPM   : 2506616112
+## 👤 Author Information
 
-Kelas : A
+| Field | Details |
+| :--- | :--- |
+| **Name** | Steven Dyanizha Ananda |
+| **NPM** | 2506616112 |
+| **Class** | A |
 
-Stat  : Healthy
+---
+
+## 🚀 Progress Update
+
+- [x] Initialized Python virtual environment (`venv`)
+- [x] Created `requirements.txt` and installed project dependencies
+- [x] Configured `.gitignore` for version control
+- [x] Added `.env.example` and `.env.prod.example` for environment variable guidance
+- [x] Initialized Django app (`myportofolio`)
+- [x] Configured baseline settings in `settings.py`
+- [x] Styled and reformatted README.md
+
+---
