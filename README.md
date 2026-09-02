@@ -26,5 +26,6 @@
 - [x] Reconfigure the project structure `myportofolio` -> `portofolio`
 - [x] Changed some setup matching the `portofolio` directory name
 - [x] Updated .env.prod for deployment
-
+- [x] Removed SECRET_KEY exposure and set DEBUG = False for production purpose
+- [x] Updated .env.prod.example for Django secret key
 ---
