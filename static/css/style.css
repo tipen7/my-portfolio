@@ -1,195 +1,113 @@
-* {
-    margin: 0;
-    padding: 0;
+/* ============================= IMPORTS ============================= */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:wght@400;500;700&display=swap');
+/* =================================================================== */
+
+/* ===================== DESIGN SYSTEM GUIDELINES ==================== */
+
+/* ======================== Basic Configuration ====================== */
+
+*, *::before, *::after {
     box-sizing: border-box;
 }
 
-:root {
-    --ink: #1c1917;
-    --paper: #faf6f0;
-    --accent: #d95d39;
-    --accent-dark: #a8442a;
-    --line: #e3d9c9;
-    --text-muted: #6b6459;
-    --radius: 4px;
-}
-
 body {
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    color: var(--ink);
-    background-color: var(--paper);
-    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-poppins);
+    background-color: var(--color-neutral);
+    color: var(--color-white);
+    line-height: 1.5;
 }
 
-h1, .brand {
-    font-family: "Space Grotesk", -apple-system, sans-serif;
+:root {
+
+    /* Colors */
+    --color-primary: #6D28D9;
+    --color-secondary: #8B5CF6;
+    --color-tertiary: #000000;
+    --color-neutral: #111111;
+    --color-white: #FFFFFF;
+
+    /* Fonts */
+    --font-poppins: "Poppins", sans-serif, ui-sans-serif, system-ui;
+    --font-montserrat: "Montserrat", sans-serif, ui-sans-serif, system-ui;
+    --font-google: "Google Sans", sans-serif, ui-sans-serif, system-ui;
+
+    /* Headings & Subheadings */
+    --text-h1: clamp(2.5rem, 5vw, 4rem);      /* 40px -> 64px */
+    --text-h2: clamp(2rem, 4vw, 3rem);        /* 32px -> 48px */
+    --text-h3: clamp(1.5rem, 3vw, 2.25rem);   /* 24px -> 36px */
+    --text-h4: clamp(1.25rem, 2.5vw, 1.75rem); /* 20px -> 28px */
+
+    /* Paragraph and caption */
+    --text-body: clamp(0.875rem, 1.5vw, 1rem); /* 14px -> 16px */
+    --text-caption: clamp(0.75rem, 1vw, 0.875rem); /* 12px -> 14px */
+
 }
 
-.container {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-}
+/* =================================================================== */
 
-.site-header {
-    border-bottom: 1px solid var(--line);
-}
+/* ======================= Fonts and Typography ====================== */
 
-.site-header .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.5rem;
-}
+.font-poppins { font-family: "Poppins", sans-serif; }
+.font-montserrat { font-family: "Montserrat", sans-serif; }
+.font-google { font-family: "Google Sans", sans-serif; }
 
-.brand {
-    font-size: 1.3rem;
+.h1 {
+    font-size: var(--text-h1);
     font-weight: 700;
-    color: var(--ink);
-    text-decoration: none;
+    line-height: 1.1;
 }
 
-.site-header nav {
-    display: flex;
-    gap: 2rem;
-}
-
-.site-header nav a {
-    color: var(--ink);
-    text-decoration: none;
-    font-size: 0.95rem;
-}
-
-.hero {
-    padding: 4.5rem 0 5rem;
-}
-
-.hero-grid {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    grid-template-areas:
-        "identity photo"
-        "details  photo";
-    gap: 1.5rem 3rem;
-}
-
-.hero-identity {
-    grid-area: identity;
-}
-
-.hero-details {
-    grid-area: details;
-}
-
-.hero-kicker {
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent-dark);
+.h2 {
+    font-size: var(--text-h2);
     font-weight: 700;
-    margin-bottom: 0.75rem;
+    line-height: 1.1;
 }
 
-.hero-identity h1 {
-    font-size: clamp(3rem, 7vw, 5rem);
-    line-height: 0.95;
+.h3 {
+    font-size: var(--text-h3);
+    font-weight: 700;
+    line-height: 1.1;
 }
 
-.bio {
-    color: var(--text-muted);
-    max-width: 480px;
-    margin-bottom: 1.5rem;
+.h4 {
+    font-size: var(--text-h4);
+    font-weight: 700;
+    line-height: 1.1;
 }
 
-.meta-list {
-    display: flex;
-    gap: 2rem;
-    margin-bottom: 1.5rem;
+.body {
+    font-size: var(--text-body);
+    font-weight: 400;
+    line-height: 1.1;
 }
 
-.meta-row dt {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-    margin-bottom: 0.15rem;
+.caption {
+    font-size: var(--text-caption);
+    font-weight: 400;
+    line-height: 1.1;
 }
 
-.meta-row dd {
-    font-weight: 600;
-}
+/* =================================================================== */
 
-.social-links {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
+/* ========================== Colors ================================= */
 
-.social-link {
-    display: inline-block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-decoration: none;
-    color: var(--paper);
-    background-color: var(--ink);
-    border-radius: var(--radius);
-    padding: 0.5rem 1.1rem;
-    transition: background-color 0.2s ease;
-}
+.text-primary   { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-tertiary  { color: var(--color-tertiary); }
+.text-neutral   { color: var(--color-neutral); }
 
-.social-link:hover {
-    background-color: var(--accent);
-}
+.bg-primary     { background-color: var(--color-primary); }
+.bg-secondary   { background-color: var(--color-secondary); }
+.bg-tertiary    { background-color: var(--color-tertiary); }
+.bg-neutral     { background-color: var(--color-neutral); }
 
-.hero-photo {
-    grid-area: photo;
-    align-self: center;
-    position: relative;
-}
+.border-primary   { border-color: var(--color-primary); }
+.border-secondary { border-color: var(--color-secondary); }
+.border-tertiary  { border-color: var(--color-tertiary); }
+.border-neutral   { border-color: var(--color-neutral); }
 
-.photo-block {
-    position: absolute;
-    top: 1.25rem;
-    left: 1.25rem;
-    width: 100%;
-    height: 100%;
-    background-color: var(--accent);
-    border-radius: var(--radius);
-    z-index: 0;
-}
+/* ====================================================================*/
 
-.avatar {
-    position: relative;
-    z-index: 1;
-    display: block;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    border-radius: var(--radius);
-    border: 3px solid var(--ink);
-}
-
-.site-footer {
-    padding: 1.5rem;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    border-top: 1px solid var(--line);
-}
-
-@media (max-width: 600px) {
-    .hero-grid {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-            "identity"
-            "photo"
-            "details";
-    }
-
-    .hero-photo {
-        max-width: 220px;
-    }
-
-    .social-links {
-        justify-content: flex-start;
-    }
-}
+/* =================== DESIGN SYSTEM END ======================== */
