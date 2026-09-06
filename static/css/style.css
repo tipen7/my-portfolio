@@ -14,9 +14,17 @@ body {
     margin: 0;
     padding: 0;
     font-family: var(--font-poppins);
-    background-color: var(--color-neutral);
     color: var(--color-white);
     line-height: 1.5;
+    scroll-behavior: smooth;
+    background: linear-gradient(-45deg, var(--color-primary), #4a0ed5, #164ab3, #320ac2);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
 }
 
 :root {
@@ -110,4 +118,105 @@ body {
 
 /* ====================================================================*/
 
-/* =================== DESIGN SYSTEM END ======================== */
+/* ======================== Navigation Bar =========================== */
+.nav-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+
+    /* Centering Fixed Position */
+    position: fixed;
+    top: 1.25rem;       /* Replaces margin-top for cleaner fixed offsets */
+    left: 50%;
+    transform: translateX(-50%); /* Centers the fixed 80% width element */
+    width: 80%;
+    max-width: 1200px;  /* Prevents navbar from becoming too wide on huge monitors */
+    z-index: 1000;
+
+    /* Glassmorphism Effect */
+    background-color: rgba(109, 40, 217, 0.45); /* #6D28D9 with 45% opacity */
+    backdrop-filter: blur(12px);                 /* Blurs content passing behind */
+    -webkit-backdrop-filter: blur(12px);         /* Safari support */
+    
+    /* Decorative Borders & Shadows */
+    border: 1px solid rgba(255, 255, 255, 0.18); /* Subtle glowing border edge */
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    padding: 1rem 1.25rem;
+}
+
+.nav-brand {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-right: 2rem;
+}
+
+.navbar-span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.nav-logo {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+}
+
+.nav-logo:hover {
+    color: #a59b9b;
+    text-decoration: none;
+    scale: 1.1;
+}
+
+.nav-link {
+    font-family: var(--font-google);
+    font-size: var(--text-h4);
+    font-weight: 400;
+    color: var(--color-white);
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    color: #a59b9b;
+    text-decoration: underline;
+}
+
+/* =================================================================== */
+
+/* ============================ Footer =============================== */
+.footer-container {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 0.5rem;
+
+    background-color: #4a0ed5;
+    padding: 2rem;
+}
+/* =================================================================== */
+
+/* ========================== Animations ============================= */
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* ====================== DESIGN SYSTEM END ========================== */
