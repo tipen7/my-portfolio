@@ -11,7 +11,7 @@
 
 ---
 
-## 🚀 About Section Progress Update
+## 🚀 Progress Update
 - [x] Initialized Python virtual environment (`venv`)
 - [x] Created `requirements.txt` and installed project dependencies
 - [x] Configured `.gitignore` for version control
