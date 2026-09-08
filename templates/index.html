@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Steven Dyanizha Ananda - Portfolio</title>
+    <title>{{ name }} - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="/static/css/style.css" />
@@ -31,8 +31,9 @@
           </svg>
         </a>
         <span class="navbar-span">
-          <a class="nav-link" href="#about">About</a>
+          <a class="nav-link" href="{% url 'main:show_main' %}">About</a>
           <a class="nav-link" href="#skills">Skills</a>
+          <a class="nav-link" href="{% url 'main:show_experience' %}">Experience</a>
         </span>
       </div>
     </nav>
@@ -45,7 +46,7 @@
       <section id="about" class="about-section">
         <div class="about-content">
           <span class="badge-tag">About Me</span>
-          <h1 class="h1 text-white font-google">Steven Dyanizha Ananda</h1>
+          <h1 class="h1 text-white font-google">{{ name }}</h1>
           <p class="body text-white font-montserrat">
             I am an Information Systems undergraduate at
             <strong class="text-secondary">Universitas Indonesia</strong> with a
@@ -74,7 +75,7 @@
               </svg>
               <div class="stat-text">
                 <span class="stat-number">UI</span>
-                <span class="stat-label">Information Systems '25</span>
+                <span class="stat-label">{{ major }}</span>
               </div>
             </div>
             <div class="stat-card">
@@ -181,7 +182,7 @@
           <div class="image-wrapper">
             <img
               src="/static/img/steven.jpg"
-              alt="Steven Dyanizha Ananda portrait"
+              alt="{{ name }} portrait"
               class="profile-picture"
             />
           </div>
@@ -417,7 +418,7 @@
     <footer class="footer-container">
       <div class="footer-content">
         <p class="body font-poppins text-white">
-          &copy; 2026 Steven. Fakultas Ilmu Komputer, Universitas Indonesia.
+          &copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.
         </p>
       </div>
     </footer>
