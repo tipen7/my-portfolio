@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects - {{ name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css"
+    />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+
+  <body>
+    <!-- Navigation Bar Start -->
+    <nav class="nav-container">
+      <div class="nav-brand">
+        <a href="{% url 'main:show_main' %}">
+          <svg
+            width="800px"
+            height="800px"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="nav-logo"
+          >
+            <path
+              fill-rule="nonzero"
+              clip-rule="nonzero"
+              d="M5.46619 2.00322C5.46619 1.44916 5.91535 1 6.46941 1H9.47907C10.0331 1 10.4823 1.44915 10.4823 2.00322V5.01288C10.4823 5.09948 10.4713 5.18352 10.4507 5.26368C10.4713 5.34385 10.4823 5.42789 10.4823 5.51449V8.02254H11.7363V6.0161C11.7363 5.60055 12.0732 5.26368 12.4887 5.26368C12.9043 5.26368 13.2411 5.60055 13.2411 6.0161V8.02254H15.2476C15.6631 8.02254 16 8.35941 16 8.77495C16 9.1905 15.6631 9.52737 15.2476 9.52737H13.2113C13.0634 11.3518 12.3727 12.8078 11.2779 13.8375C10.045 14.9972 8.37374 15.5467 6.59481 15.5467C4.97058 15.5467 3.43674 15.0891 2.24224 14.1255C1.03896 13.1549 0.236443 11.7155 0.0125343 9.86728C-0.115917 8.80699 0.763545 8.02254 1.70412 8.02254H1.95492V5.51449C1.95492 4.96043 2.40408 4.51127 2.95814 4.51127H5.46619V2.00322ZM5.46619 6.0161H3.45975V8.02254H5.46619V6.0161ZM1.70412 9.52737C1.63196 9.52737 1.57447 9.55683 1.54064 9.59191C1.51066 9.62299 1.50235 9.65252 1.50644 9.68629C1.68777 11.1831 2.31696 12.2524 3.18705 12.9543C4.06593 13.6632 5.24713 14.0419 6.59481 14.0419C8.071 14.0419 9.34667 13.5882 10.2469 12.7414C11.0115 12.0222 11.5598 10.9686 11.7007 9.52737H1.70412ZM6.97102 8.02254H8.97746V6.0161H6.97102V8.02254ZM6.97102 4.51127H8.97746V2.50483H6.97102V4.51127Z"
+              fill="#FFFFFF"
+            />
+          </svg>
+        </a>
+        <span class="navbar-span">
+          <a class="nav-link" href="{% url 'main:show_main' %}">About</a>
+          <a class="nav-link" href="{% url 'main:show_main' %}#skills"
+            >Skills</a
+          >
+          <a class="nav-link" href="{% url 'main:show_experience' %}"
+            >Experience</a
+          >
+          <a class="nav-link" href="{% url 'main:show_projects' %}">Projects</a>
+        </span>
+      </div>
+    </nav>
+    <!-- Navigation Bar End -->
+
+    <!-- Main Start -->
+    <main>
+      <section class="project-section" id="project">
+        <div class="container">
+          <div class="project-heading">
+            <div>
+              <h1>Projects</h1>
+            </div>
+          </div>
+
+          <div class="project-grid">
+            {% for project in projects %}
+            <article class="project-card">
+              <div class="project-card-header">
+                <span class="project-type">{{ project.get_type_display }}</span>
+              </div>
+
+              <div
+                class="project-thumbnail{% if not project.image %} project-thumbnail-empty{% endif %}"
+              >
+                {% if project.image %}
+                <img
+                  src="{{ project.image }}"
+                  alt="{{ project.name }} project preview"
+                  loading="lazy"
+                />
+                {% else %}
+                <span>Project preview<br />Coming Soon!</span>
+                {% endif %}
+              </div>
+
+              <div class="project-card-content">
+                <h2 class="project-name">{{ project.name }}</h2>
+                <p class="project-description">{{ project.description }}</p>
+
+                {% if project.url %}
+                <a
+                  class="project-url"
+                  href="{{ project.url }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span>Visit project</span>
+                  <span class="project-url-arrow" aria-hidden="true"
+                    >&#8599;</span
+                  >
+                </a>
+                {% endif %}
+              </div>
+
+              <div class="project-tech-stack" aria-label="Technologies used">
+                {% for technology in project.tech_stack %}
+                <span class="project-tech" title="{{ technology }}">
+                  {% if "postgres" in technology|lower %}
+                  <i class="devicon-postgresql-plain" aria-hidden="true"></i>
+                  {% elif "python" in technology|lower %}
+                  <i class="devicon-python-plain" aria-hidden="true"></i>
+                  {% elif "django" in technology|lower %}
+                  <i class="devicon-django-plain" aria-hidden="true"></i>
+                  {% elif "javascript" in technology|lower %}
+                  <i class="devicon-javascript-plain" aria-hidden="true"></i>
+                  {% elif "react" in technology|lower %}
+                  <i class="devicon-react-original" aria-hidden="true"></i>
+                  {% elif "html" in technology|lower %}
+                  <i class="devicon-html5-plain" aria-hidden="true"></i>
+                  {% elif "css" in technology|lower %}
+                  <i class="devicon-css3-plain" aria-hidden="true"></i>
+                  {% elif "node" in technology|lower %}
+                  <i class="devicon-nodejs-plain" aria-hidden="true"></i>
+                  {% elif "docker" in technology|lower %}
+                  <i class="devicon-docker-plain" aria-hidden="true"></i>
+                  {% elif "git" in technology|lower %}
+                  <i class="devicon-git-plain" aria-hidden="true"></i>
+                  {% elif "mysql" in technology|lower %}
+                  <i class="devicon-mysql-plain" aria-hidden="true"></i>
+                  {% elif "java" in technology|lower %}
+                  <i class="devicon-java-plain" aria-hidden="true"></i>
+                  {% else %}
+                  <span class="project-tech-fallback" aria-hidden="true"
+                    >{{ technology|slice:":1"|upper }}</span
+                  >
+                  {% endif %}
+                  <span class="project-tech-name">{{ technology }}</span>
+                </span>
+                {% endfor %}
+              </div>
+            </article>
+            {% empty %}
+            <div class="project-empty" role="status">
+              <h2>No projects published yet.</h2>
+              <a class="return-to-home" href="{% url 'main:show_main' %}"
+                >Return to Homepage <span aria-hidden="true">&#8599;</span></a
+              >
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- Main End -->
+
+    <!-- Footer  -->
+    <footer class="footer-container">
+      <div class="footer-content">
+        <p class="body font-poppins text-white">
+          &copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.
+        </p>
+      </div>
+    </footer>
+    <!-- Footer End -->
+  </body>
+</html>

@@ -27,5 +27,19 @@ class Experience(models.Model):
     def is_ongoing(self):
         return self.ended_at is None
 
-  
+class Projects(models.Model):
 
+    PROJECT_TYPE = [
+        ("personal", "Personal"),
+        ("competition", "Competition"),
+        ("team", "Team")
+    ]
+
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False) # Primary key
+    name = models.CharField(max_length=50) # Project name is limited to 50 characters
+    description = models.TextField(max_length=255) # Project's description
+    type = models.CharField(choices=PROJECT_TYPE, max_length=15, default="personal") # Project Enum type
+    url = models.URLField(max_length=255, blank=True, null=True) # Project deployment URL
+    image = models.CharField(max_length=255) # Image path in the directory for thumbnail purpose
+    tech_stack = models.JSONField(default=list, blank=True) # Project tech stack (display purpose)
+    

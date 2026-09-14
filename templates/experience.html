@@ -32,13 +32,19 @@
         </a>
         <span class="navbar-span">
           <a class="nav-link" href="{% url 'main:show_main' %}">About</a>
-          <a class="nav-link" href="{% url 'main:show_main' %}#skills">Skills</a>
+          <a class="nav-link" href="{% url 'main:show_main' %}#skills"
+            >Skills</a
+          >
           <a class="nav-link" href="{% url 'main:show_experience' %}"
             >Experience</a
           >
+          <a class="nav-link" href="{% url 'main:show_projects' %}">Projects</a>
         </span>
       </div>
     </nav>
+    <!-- Navigation Bar End -->
+
+    <!-- Main Start -->
     <main>
       <section class="experience-section" id="experience">
         <div class="container">
@@ -67,5 +73,16 @@
         </div>
       </section>
     </main>
+    <!-- Main End -->
+
+    <!-- Footer  -->
+    <footer class="footer-container">
+      <div class="footer-content">
+        <p class="body font-poppins text-white">
+          &copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.
+        </p>
+      </div>
+    </footer>
+    <!-- Footer End -->
   </body>
 </html>
