@@ -73,7 +73,7 @@ The rendered HTML is returned as an HTTP response to the user browser
 
 ### Why This Matters
 
-- Models handle data, Views handle logic, Templates handle presentation. Each layer can be modified independently.
+- Models handle data, Views handle logic, Templates handle presentation. Each layer can be modified independently.  
 - Because every request follows the same pipeline, debugging becomes easier since its just a matter of tracing a single and consistent path (`urls.py` → `views.py` → `templates/`).
 - New routes and features can be added without disturbing existing logic, since routing and logic are grouped.
 
