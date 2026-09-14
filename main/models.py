@@ -42,6 +42,4 @@ class Projects(models.Model):
     url = models.URLField(max_length=255, blank=True, null=True) # Project deployment URL
     image = models.CharField(max_length=255) # Image path in the directory for thumbnail purpose
     tech_stack = models.JSONField(default=list, blank=True) # Project tech stack (display purpose)
-
-  
-
+    
