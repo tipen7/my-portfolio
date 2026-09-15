@@ -40,6 +40,5 @@ class Projects(models.Model):
     description = models.TextField(max_length=255) # Project's description
     type = models.CharField(choices=PROJECT_TYPE, max_length=15, default="personal") # Project Enum type
     url = models.URLField(max_length=255, blank=True, null=True) # Project deployment URL
-    image = models.CharField(max_length=255) # Image path in the directory for thumbnail purpose
+    image = models.URLField(max_length=255) # Image path in the directory for thumbnail purpose
     tech_stack = models.JSONField(default=list, blank=True) # Project tech stack (display purpose)
-    

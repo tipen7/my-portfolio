@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from main.models import Experience
+from main.models import Experience, Projects
 
 
 class MainTest(TestCase):
@@ -56,3 +56,36 @@ class MainTest(TestCase):
         self.assertFalse(self.experience.is_ongoing)
         self.assertContains(response, "Selesai")
         self.assertNotContains(response, "Sedang berlangsung")
+
+    def test_project_page_displays_saved_project(self):
+        project = Projects.objects.create(
+            name="Django Portfolio",
+            description="A portfolio project.",
+            type="personal",
+            image="https://example.com/project.jpg",
+            tech_stack=["Django", "Next.js"],
+        )
+
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, project.name)
+        self.assertContains(response, "Django")
+        self.assertContains(response, "Next.js")
+        self.assertContains(response, "Hapus Proyek")
+        self.assertContains(response, f"Hapus {project.name}")
+
+    def test_project_search_uses_project_name(self):
+        Projects.objects.create(
+            name="Django Portfolio",
+            description="A portfolio project.",
+            type="personal",
+            image="https://example.com/project.jpg",
+        )
+
+        response = self.client.get(
+            reverse("main:show_projects"),
+            {"title": "Django"},
+        )
+
+        self.assertContains(response, "Django Portfolio")
