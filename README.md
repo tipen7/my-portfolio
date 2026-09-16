@@ -93,7 +93,7 @@ Data stored as structured model instances can be:
 - Exposed through an API (e.g. Django REST Framework) for consumption by other clients (mobile apps, SPAs, third-party integrations).
 - Queried programmatically, rather than being locked inside static markup.
 
-### Validation and Testing
+### Validation and Testing  
 
 Models allow Django to enforce **data integrity at the schema level** via field types, constraints, and custom `clean()`/`validate()` methods. This also makes the data testable in isolation using Django's testing framework (`TestCase`, model factories, fixtures) and also protected against malformed or inconsistent input, which raw HTML content has no mechanism to guard against.
 
