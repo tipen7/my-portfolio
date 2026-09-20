@@ -1,8 +1,88 @@
 from django import forms
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from main.models import Projects
+from main.models import Experience, Projects
+
+
+class ExperienceForm(ModelForm):
+    started_at = forms.DateTimeField(
+        required=False,
+        input_formats=["%Y-%m-%d"],
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={"class": "form-control", "type": "date"},
+        ),
+        label=_("Start Date"),
+    )
+    ended_at = forms.DateTimeField(
+        required=False,
+        input_formats=["%Y-%m-%d"],
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={"class": "form-control", "type": "date"},
+        ),
+        label=_("End Date"),
+    )
+
+    class Meta:
+        model = Experience
+        fields = ["title", "description", "category", "thumbnail", "started_at", "ended_at"]
+        labels = {
+            "title": _("Experience Title"),
+            "description": _("Description"),
+            "category": _("Category"),
+            "thumbnail": _("Thumbnail URL"),
+            "started_at": _("Start Date"),
+            "ended_at": _("End Date"),
+        }
+        widgets = {
+            "title": TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Teaching Assistant, Backend Intern, ...",
+                    "required": True,
+                    "maxlength": 255,
+                }
+            ),
+            "description": Textarea(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Describe your role and impact.",
+                    "required": True,
+                    "rows": 5,
+                }
+            ),
+            "category": Select(
+                choices=Experience.EXPERIENCE_CHOICES,
+                attrs={"class": "form-control", "required": True},
+            ),
+            "thumbnail": URLInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "https://example.com/experience.jpg",
+                    "required": False,
+                }
+            ),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        started_at = cleaned_data.get("started_at")
+        ended_at = cleaned_data.get("ended_at")
+
+        if not started_at:
+            started_at = self.instance.started_at or timezone.now()
+            cleaned_data["started_at"] = started_at
+
+        if started_at and ended_at and ended_at < started_at:
+            self.add_error(
+                "ended_at",
+                _("End date must be on or after the start date."),
+            )
+
+        return cleaned_data
 
 class ProjectForm(ModelForm):
 
@@ -16,6 +96,12 @@ class ProjectForm(ModelForm):
         ),
         label=_("Project Tech Stack"),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            tech_stack = self.instance.tech_stack or []
+            self.initial["tech_stack"] = ", ".join(tech_stack)
 
     class Meta:
 

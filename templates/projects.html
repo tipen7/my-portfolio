@@ -68,8 +68,16 @@
               <span>Visit project</span>
               <span class="project-url-arrow" aria-hidden="true">&#8599;</span>
             </a>
-            {% endif %} 
-            {% include "components/project_delete_modal.html" with project=project %}
+            {% endif %}
+            <div class="card-actions">
+              <a
+                class="button button-secondary"
+                href="{% url 'main:update_project' project.id %}"
+              >
+                Edit
+              </a>
+              {% include "components/project_delete_modal.html" with project=project %}
+            </div>
           </div>
 
           <div class="project-tech-stack" aria-label="Technologies used">

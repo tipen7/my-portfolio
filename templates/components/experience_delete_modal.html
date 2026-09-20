@@ -1,24 +1,24 @@
 <button
   type="button"
   class="button button-danger modal-trigger"
-  popovertarget="delete-project-{{ project.id }}"
-  aria-label="Hapus {{ project.name }}"
-  title="Hapus proyek"
+  popovertarget="delete-experience-{{ experience.id }}"
+  aria-label="Hapus {{ experience.title }}"
+  title="Hapus experience"
 >
-  Hapus Proyek
+  Hapus
 </button>
 <div
-  id="delete-project-{{ project.id }}"
+  id="delete-experience-{{ experience.id }}"
   class="project-delete-modal"
   popover="auto"
   role="dialog"
   aria-modal="true"
-  aria-labelledby="delete-project-title-{{ project.id }}"
+  aria-labelledby="delete-experience-title-{{ experience.id }}"
 >
   <button
     type="button"
     class="project-delete-modal__backdrop"
-    popovertarget="delete-project-{{ project.id }}"
+    popovertarget="delete-experience-{{ experience.id }}"
     popovertargetaction="hide"
     aria-label="Tutup konfirmasi hapus"
   ></button>
@@ -26,37 +26,42 @@
     <button
       type="button"
       class="project-delete-modal__close"
-      popovertarget="delete-project-{{ project.id }}"
+      popovertarget="delete-experience-{{ experience.id }}"
       popovertargetaction="hide"
       aria-label="Tutup konfirmasi hapus"
     >
-      ×
+      &times;
     </button>
     <div class="delete-modal__header">
       <span class="delete-modal__icon" aria-hidden="true">!</span>
       <div>
-        <p class="delete-modal__eyebrow">Project action</p>
-        <h2 id="delete-project-title-{{ project.id }}">Hapus Proyek?</h2>
+        <p class="delete-modal__eyebrow">Experience action</p>
+        <h2 id="delete-experience-title-{{ experience.id }}">
+          Hapus Experience?
+        </h2>
       </div>
     </div>
     <p class="delete-modal__message">
-      This action cannot be undone. The following project will be permanently
+      This action cannot be undone. The following experience will be permanently
       removed:
     </p>
-    <p class="delete-modal__item">{{ project.name }}</p>
+    <p class="delete-modal__item">{{ experience.title }}</p>
     <div class="project-delete-modal__actions">
       <button
         type="button"
         class="button button-secondary"
-        popovertarget="delete-project-{{ project.id }}"
+        popovertarget="delete-experience-{{ experience.id }}"
         popovertargetaction="hide"
       >
         Batal
       </button>
-      <form method="post" action="{% url 'main:delete_project' project.id %}">
+      <form
+        method="post"
+        action="{% url 'main:delete_experience' experience.id %}"
+      >
         {% csrf_token %}
         <button type="submit" class="button button-danger">
-          Ya, Hapus Proyek
+          Ya, Hapus Experience
         </button>
       </form>
     </div>

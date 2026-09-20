@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.utils import timezone
 
 class Experience(models.Model):
 
@@ -17,7 +18,7 @@ class Experience(models.Model):
     description = models.TextField()
     category = models.CharField(choices=EXPERIENCE_CHOICES, max_length=20, default="freelance")
     thumbnail = models.URLField(blank=True, null=True)
-    started_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(default=timezone.now) # Changed so that it can be editable
     ended_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
@@ -25,7 +26,7 @@ class Experience(models.Model):
 
     @property
     def is_ongoing(self):
-        return self.ended_at is None
+        return self.ended_at is None or self.ended_at > timezone.now()
 
 class Projects(models.Model):
 
@@ -42,3 +43,4 @@ class Projects(models.Model):
     url = models.URLField(max_length=255, blank=True, null=True) # Project deployment URL
     image = models.URLField(max_length=255) # Image path in the directory for thumbnail purpose
     tech_stack = models.JSONField(default=list, blank=True) # Project tech stack (display purpose)
+
