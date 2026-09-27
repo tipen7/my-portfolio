@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 class Experience(models.Model):
 
@@ -43,4 +44,5 @@ class Projects(models.Model):
     url = models.URLField(max_length=255, blank=True, null=True) # Project deployment URL
     image = models.URLField(max_length=255) # Image path in the directory for thumbnail purpose
     tech_stack = models.JSONField(default=list, blank=True) # Project tech stack (display purpose)
+    starred_by = models.ManyToManyField(User, related_name="starred_projects", blank=True) # Users who starred the project
 
