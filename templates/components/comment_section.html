@@ -1,0 +1,89 @@
+<button
+  type="button"
+  class="button experience-comments-trigger"
+  popovertarget="comments-{{ experience.id }}"
+  aria-controls="comments-{{ experience.id }}"
+>
+  <span aria-hidden="true">&#128172;</span>
+  Comments
+  <span class="experience-comments-count">{{ experience.comments.count }}</span>
+</button>
+
+<section
+  id="comments-{{ experience.id }}"
+  class="experience-comments-popover"
+  popover="auto"
+  role="dialog"
+  aria-labelledby="comments-{{ experience.id }}-title"
+>
+  <div class="experience-comments-popover__header">
+    <div>
+      <p class="experience-comments-popover__eyebrow">Discussion</p>
+      <h3 id="comments-{{ experience.id }}-title">
+        Comments on {{ experience.title }}
+      </h3>
+    </div>
+    <button
+      type="button"
+      class="experience-comments-popover__close"
+      popovertarget="comments-{{ experience.id }}"
+      popovertargetaction="hide"
+      aria-label="Close comments"
+    >
+      &times;
+    </button>
+  </div>
+
+  <div class="experience-comments-list">
+    {% for comment in experience.comments.all %}
+    <article class="experience-comment">
+      <span class="experience-comment__avatar" aria-hidden="true">
+        {{ comment.commented_by.username|slice:":1"|upper }}
+      </span>
+      <div class="experience-comment__body">
+        <div class="experience-comment__meta">
+          <strong>{{ comment.commented_by.username }}</strong>
+          <time datetime="{{ comment.created_at|date:'c' }}">
+            Sent {{ comment.created_at|date:"d-m-Y H:i" }}
+          </time>
+        </div>
+        <p>{{ comment.text }}</p>
+      </div>
+    </article>
+    {% empty %}
+    <p class="experience-comments-empty">No comments yet.</p>
+    {% endfor %}
+  </div>
+
+  {% if user.is_authenticated %}
+  <form
+    method="post"
+    action="{% url 'main:comment_experience' experience.id %}"
+    class="experience-comment-form"
+  >
+    {% csrf_token %}
+    <label for="comment-{{ experience.id }}">
+      {% if experience.user_comment %}Update your comment{% else %}Add a
+      comment{% endif %}
+    </label>
+    <textarea
+      id="comment-{{ experience.id }}"
+      name="text"
+      class="form-control"
+      maxlength="100"
+      rows="3"
+      required
+    >
+{% if experience.user_comment %}{{ experience.user_comment.text }}{% endif %}</textarea
+    >
+    <button type="submit" class="button">
+      {% if experience.user_comment %}Update comment{% else %}Comment{% endif %}
+    </button>
+  </form>
+  {% else %}
+  <p class="experience-comments-login">
+    <a href="{% url 'main:login' %}?next={{ request.path }}">Log in</a>
+    to comment.
+  </p>
+  {% endif %}
+</section>

@@ -1,12 +1,19 @@
+from django.contrib.auth.models import Group, User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from main.models import Experience, Projects
+from main.forms import ProjectForm
+from main.models import Comment, Experience, Projects
 
 
 class MainTest(TestCase):
     def setUp(self):
+        self.owner = User.objects.create_superuser(
+            username="owner",
+            password="owner-password",
+        )
+        self.client.login(username="owner", password="owner-password")
         self.experience = Experience.objects.create(
             title="Asisten Dosen PBP",
             description="Membantu mahasiswa memahami pengembangan web.",
@@ -41,6 +48,62 @@ class MainTest(TestCase):
         self.assertContains(response, "Part-Time")
         self.assertContains(response, "Sedang berlangsung")
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
+
+        Comment.objects.create(
+            experience=self.experience,
+            commented_by=self.owner,
+            text="A useful experience.",
+        )
+        response = self.client.get(reverse("main:show_experience"))
+        self.assertContains(response, "experience-comments-trigger")
+        self.assertContains(response, "experience-comment__avatar")
+        self.assertContains(response, "Sent")
+
+    def test_authenticated_user_can_create_and_update_one_experience_comment(self):
+        response = self.client.post(
+            reverse("main:comment_experience", args=[self.experience.id]),
+            {"text": "First comment"},
+        )
+        self.assertRedirects(response, reverse("main:show_experience"))
+        self.assertEqual(
+            Comment.objects.filter(
+                experience=self.experience,
+                commented_by=self.owner,
+            ).count(),
+            1,
+        )
+
+        self.client.post(
+            reverse("main:comment_experience", args=[self.experience.id]),
+            {"text": "Updated comment"},
+        )
+        comment = Comment.objects.get(
+            experience=self.experience,
+            commented_by=self.owner,
+        )
+        self.assertEqual(comment.text, "Updated comment")
+        self.assertEqual(
+            Comment.objects.filter(
+                experience=self.experience,
+                commented_by=self.owner,
+            ).count(),
+            1,
+        )
+
+    def test_anonymous_user_cannot_comment_on_experience(self):
+        self.client.logout()
+
+        response = self.client.post(
+            reverse("main:comment_experience", args=[self.experience.id]),
+            {"text": "Anonymous comment"},
+        )
+
+        self.assertRedirects(
+            response,
+            f'{reverse("main:login")}?next={reverse("main:comment_experience", args=[self.experience.id])}',
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(Comment.objects.exists())
 
     def test_empty_experience_page(self):
         Experience.objects.all().delete()
@@ -156,6 +219,11 @@ class MainTest(TestCase):
         self.assertContains(response, "Hapus Proyek")
         self.assertContains(response, f"Hapus {project.name}")
 
+        api_response = self.client.get(reverse("main:get_projects_json"))
+        self.assertEqual(api_response.status_code, 200)
+        self.assertContains(api_response, project.name)
+        self.assertNotContains(api_response, "starred_by")
+
     def test_project_search_uses_project_name(self):
         Projects.objects.create(
             name="Django Portfolio",
@@ -198,6 +266,9 @@ class MainTest(TestCase):
         self.assertEqual(project.type, "team")
         self.assertEqual(project.tech_stack, ["Django", "Python", "PostgreSQL"])
 
+    def test_project_form_does_not_expose_starred_by(self):
+        self.assertNotIn("starred_by", ProjectForm().fields)
+
     def test_project_card_has_edit_and_delete_actions(self):
         project = Projects.objects.create(
             name="Django Portfolio",
@@ -213,3 +284,86 @@ class MainTest(TestCase):
             f'href="{reverse("main:update_project", args=[project.id])}"',
         )
         self.assertContains(response, "Hapus Proyek")
+
+    def test_anonymous_user_can_read_but_cannot_change_portfolio(self):
+        self.client.logout()
+        project = Projects.objects.create(
+            name="Public Project",
+            description="Visible to everyone.",
+            image="https://example.com/project.jpg",
+        )
+
+        response = self.client.get(reverse("main:show_projects"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(
+            response,
+            reverse("main:update_project", args=[project.id]),
+        )
+        self.assertNotContains(response, "Hapus Proyek")
+        self.assertRedirects(
+            self.client.post(reverse("main:toggle_star", args=[project.id])),
+            f'{reverse("main:login")}?next={reverse("main:toggle_star", args=[project.id])}',
+            fetch_redirect_response=False,
+        )
+
+    def test_regular_user_can_toggle_star_but_cannot_edit(self):
+        user = User.objects.create_user(username="visitor", password="password")
+        project = Projects.objects.create(
+            name="Starred Project",
+            description="A project to star.",
+            image="https://example.com/project.jpg",
+        )
+        self.client.login(username="visitor", password="password")
+
+        self.client.post(reverse("main:toggle_star", args=[project.id]))
+        self.assertTrue(project.starred_by.filter(pk=user.pk).exists())
+        self.client.post(reverse("main:toggle_star", args=[project.id]))
+        self.assertFalse(project.starred_by.filter(pk=user.pk).exists())
+        self.assertEqual(
+            self.client.post(
+                reverse("main:update_project", args=[project.id]),
+                {},
+            ).status_code,
+            403,
+        )
+
+    def test_editor_can_update_but_cannot_create_or_delete(self):
+        editor = User.objects.create_user(username="editor", password="password")
+        editor.groups.add(Group.objects.create(name="Editor"))
+        project = Projects.objects.create(
+            name="Editable Project",
+            description="An editable project.",
+            image="https://example.com/project.jpg",
+        )
+        self.client.login(username="editor", password="password")
+
+        response = self.client.post(
+            reverse("main:update_project", args=[project.id]),
+            {
+                "name": "Updated by Editor",
+                "description": "Updated description.",
+                "type": "personal",
+                "url": "",
+                "image": "https://example.com/updated.jpg",
+                "tech_stack": "Django",
+            },
+        )
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertEqual(
+            self.client.post(
+                reverse("main:create_project"),
+                {
+                    "name": "Forbidden Project",
+                    "description": "Should not be created.",
+                    "type": "personal",
+                    "image": "https://example.com/forbidden.jpg",
+                },
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("main:delete_project", args=[project.id]),
+            ).status_code,
+            403,
+        )

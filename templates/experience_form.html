@@ -12,10 +12,12 @@
       </h1>
 
       <form method="post" class="experience-form">
-        {% csrf_token %} {% for field in form %}
+        {% csrf_token %} 
+        {% for field in form %}
         <div class="form-group">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }} {% for error in field.errors %}
+          {{ field }} 
+          {% for error in field.errors %}
           <p class="form-error">{{ error }}</p>
           {% endfor %}
         </div>

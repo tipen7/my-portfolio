@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 class Experience(models.Model):
 
@@ -43,4 +44,33 @@ class Projects(models.Model):
     url = models.URLField(max_length=255, blank=True, null=True) # Project deployment URL
     image = models.URLField(max_length=255) # Image path in the directory for thumbnail purpose
     tech_stack = models.JSONField(default=list, blank=True) # Project tech stack (display purpose)
+    starred_by = models.ManyToManyField(User, related_name="starred_projects", blank=True) # Users who starred the project
 
+class Comment(models.Model):
+
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+    text = models.TextField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    experience = models.ForeignKey(
+        Experience,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    commented_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["experience", "commented_by"],
+                name="unique_experience_comment_per_user",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Comment by {self.commented_by} on {self.experience}"
+    
