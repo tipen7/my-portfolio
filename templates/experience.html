@@ -1,9 +1,6 @@
-{% extends 'base.html' %} 
-{% block meta %}
-  <title>Experience - {{ name }}</title>
-{% endblock meta %} 
-
-{% block content %}
+{% extends 'base.html' %} {% block meta %}
+<title>Experience - {{ name }}</title>
+{% endblock meta %} {% block content %}
 
 <!-- Main Start -->
 <main>
@@ -17,10 +14,12 @@
             Perjalanan selama kuliah & menjalani kehidupan di Pacil!
           </p>
         </div>
+        {% if can_manage %}
         <a href="{% url 'main:create_experience' %}" class="button">
           <span aria-hidden="true">+</span>
           Tambah Experience
         </a>
+        {% endif %}
       </div>
 
       <form
@@ -34,7 +33,14 @@
             <option value="">Semua kategori</option>
             {% for value, label in experience_categories %}
             <option
-              value="{{ value }}" {%if category_query == "value" %}selected{%endif%}
+              value="{{ value }}"
+              {%
+              if
+              category_query=""
+              ="value"
+              %}selected{%
+              endif
+              %}
             >
               {{ label }}
             </option>
@@ -71,15 +77,20 @@
             Selesai ({{ experience.started_at|date:"d-m-Y" }} - {{
             experience.ended_at|date:"d-m-Y" }})
           </p>
-          {% endif %}
+          {% endif %} 
+          {% include "components/comment_section.html" with experience=experience %}
 
           <div class="card-actions experience-actions">
+            {% if can_edit %}
             <a
               class="button button-secondary"
               href="{% url 'main:update_experience' experience.id %}"
               >Edit</a
             >
-            {% include "components/experience_delete_modal.html" with experience=experience %}
+            {% endif %} 
+            {% if can_manage %} 
+              {% include "components/experience_delete_modal.html" with experience=experience %}
+            {% endif %}
           </div>
         </article>
         {% empty %}
@@ -88,9 +99,11 @@
             Belum ada pengalaman yang ditambahkan{% if category_query %} pada
             kategori ini{% endif %}.
           </p>
-          <a class="button" href="{% url 'main:create_experience' %}"
-            >Tambah Experience</a
-          >
+          {% if can_manage %}
+          <a class="button" href="{% url 'main:create_experience' %}">
+            Tambah Experience
+          </a>
+          {% endif %}
         </div>
         {% endfor %}
       </div>

@@ -8,14 +8,14 @@
       <div class="project-heading">
         <div>
           <h1>Projects</h1>
-          {% if user.is_superuser %}
-            <a
-              href="{% url 'main:create_project' %}"
-              class="button project-add-button"
-            >
-              <span aria-hidden="true">+</span>
-              Tambah Proyek
-            </a>
+          {% if can_manage %}
+          <a
+            href="{% url 'main:create_project' %}"
+            class="button project-add-button"
+          >
+            <span aria-hidden="true">+</span>
+            Tambah Proyek
+          </a>
           {% endif %}
         </div>
         <form
@@ -72,15 +72,17 @@
             </a>
             {% endif %}
             <div class="card-actions">
+              {% if can_edit %}
               <a
                 class="button button-secondary"
                 href="{% url 'main:update_project' project.id %}"
               >
                 Edit
               </a>
-              {% include "components/project_star.html" with project=project %}
-              {% if user.is_superuser %}
-                {% include "components/project_delete_modal.html" with project=project %}
+              {% endif %}
+              {% include "components/project_star.html" with project=project %} 
+              {% if can_manage %} 
+                {% include "components/project_delete_modal.html" with project=project %} 
               {% endif %}
             </div>
           </div>
@@ -119,7 +121,7 @@
               {% endif %}
               <span class="project-tech-name">{{ technology }}</span>
             </span>
-            {% endfor %}
+            {% endfor %} 
           </div>
         </article>
         {% empty %}

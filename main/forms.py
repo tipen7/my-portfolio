@@ -3,7 +3,7 @@ from django.forms import ModelForm, TextInput, Textarea, URLInput, Select
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from main.models import Experience, Projects
+from main.models import Comment, Experience, Projects
 
 
 class ExperienceForm(ModelForm):
@@ -84,6 +84,24 @@ class ExperienceForm(ModelForm):
 
         return cleaned_data
 
+
+class CommentForm(ModelForm):
+
+    class Meta:
+        model = Comment
+        fields = ["text"]
+        labels = {"text": "Comment"}
+        widgets = {
+            "text": Textarea(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Write a comment...",
+                    "maxlength": 100,
+                    "rows": 3,
+                }
+            ),
+        }
+
 class ProjectForm(ModelForm):
 
     tech_stack = forms.CharField(
@@ -106,7 +124,7 @@ class ProjectForm(ModelForm):
     class Meta:
 
         model = Projects
-        exclude = ['id']
+        exclude = ['id', 'starred_by']
 
         labels = {
             "name" : _("Project Name"),
@@ -151,5 +169,4 @@ class ProjectForm(ModelForm):
             return [item.strip() for item in data.split(',') if item.strip()]
         
         return data
-
 
