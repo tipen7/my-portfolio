@@ -26,7 +26,7 @@
 
   **USER**: Can only view and star projects
   -> Username: user_tipen
-  -> Password: usertipen123
+  -> Password: tiptiptip123
 
   **UNAUTHENTICATED USER**: Can only view
   
