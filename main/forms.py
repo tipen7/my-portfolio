@@ -2,7 +2,6 @@ from django import forms
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from main.models import Comment, Experience, Projects
 
 
@@ -169,4 +168,5 @@ class ProjectForm(ModelForm):
             return [item.strip() for item in data.split(',') if item.strip()]
         
         return data
+
 

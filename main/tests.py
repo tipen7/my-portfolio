@@ -269,6 +269,57 @@ class MainTest(TestCase):
     def test_project_form_does_not_expose_starred_by(self):
         self.assertNotIn("starred_by", ProjectForm().fields)
 
+    def test_project_name_is_escaped_in_public_html_and_json(self):
+        payload = "<img src=\"x\" onerror=\"alert('XSS!')\">"
+        project = Projects.objects.create(
+            name=payload,
+            description="A project with a text-only name.",
+            image="https://example.com/project.jpg",
+        )
+
+        response = self.client.get(reverse("main:show_projects"))
+        self.assertNotContains(response, payload, html=False)
+        self.assertNotContains(response, payload, html=True)
+        self.assertContains(response, "&lt;img", html=False)
+
+        api_response = self.client.get(reverse("main:get_projects_json"))
+        self.assertEqual(api_response.json()[0]["fields"]["name"], payload)
+        self.assertEqual(str(project.id), api_response.json()[0]["pk"])
+
+    def test_project_name_with_attribute_breakout_is_not_rendered_as_html(self):
+        payload = '\"><img src=x onerror=\"alert(1)\">'
+        Projects.objects.create(
+            name=payload,
+            description="A project with an attribute breakout attempt.",
+            image="https://example.com/project.jpg",
+        )
+
+        response = self.client.get(reverse("main:show_projects"))
+        self.assertNotContains(response, '<img src=x onerror="alert(1)">', html=True)
+        self.assertContains(response, "&quot;&gt;&lt;img", html=False)
+
+    def test_ajax_project_creation_keeps_name_as_text(self):
+        payload = '<img src="x" onerror="alert(\'XSS!\')">'
+        response = self.client.post(
+            reverse("main:create_project_ajax"),
+            {
+                "name": payload,
+                "description": "Created through the project modal.",
+                "type": "personal",
+                "image": "https://example.com/project.jpg",
+                "tech_stack": "Django, Python",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Projects.objects.filter(name=payload).exists())
+        self.assertNotContains(
+            self.client.get(reverse("main:show_projects")),
+            payload,
+            html=True,
+        )
+
     def test_project_card_has_edit_and_delete_actions(self):
         project = Projects.objects.create(
             name="Django Portfolio",

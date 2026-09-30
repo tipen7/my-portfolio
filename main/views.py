@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core import serializers
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Prefetch
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -12,6 +12,24 @@ import datetime
 
 from .models import Comment, Experience, Projects
 from .forms import CommentForm, ExperienceForm, ProjectForm
+
+@require_POST
+def create_project_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan proyek."},
+            status=403,
+        )
+
+    form = ProjectForm(request.POST)
+    if form.is_valid():
+        project = form.save()
+        return JsonResponse(
+            {"message": "Proyek berhasil ditambahkan.", "pk": str(project.id)},
+            status=201,
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 
 def _is_editor_or_owner(user):
@@ -214,8 +232,9 @@ def show_projects(request):
 
     context = {
         "name": "Burhan",
-        "projects": projects,
         "title_query": title_query,
+        "projects": projects,
+        "form": ProjectForm(),
         "can_edit": _is_editor_or_owner(request.user),
         "can_manage": request.user.is_authenticated and request.user.is_superuser,
     }
@@ -261,19 +280,35 @@ def update_project(request, project_id):
     return render(request, "projects_form.html", context)
 
 def get_projects_json(request):
+
     title_query = request.GET.get("title", "").strip()
     projects = Projects.objects.all()
 
     if title_query:
         projects = projects.filter(name__icontains=title_query)
 
-    projects_json = serializers.serialize(
-        "json",
-        projects,
-        fields=["name", "description", "type", "url", "image", "tech_stack"],
-        use_natural_foreign_keys=True,
-    )
-    return HttpResponse(projects_json, content_type="application/json") 
+    data = []
+    for project in projects:
+        starred_users = project.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
+
+        data.append({
+            "pk": str(project.id),
+            "fields": {
+                "name": project.name,
+                "description": project.description,
+                "tech_stack": project.tech_stack,
+                "url": project.url,
+                "image": project.image,
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_names": starred_by_names,
+            }
+        })
+
+        
+    return JsonResponse(data, safe=False)
 
 # Delete Projects
 @login_required(login_url="/login/")
