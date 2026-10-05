@@ -2035,6 +2035,7 @@ body {
   width: 100%;
   max-width: 100%;
   margin-top: 1.5rem;
+  
 }
 
 .form-group {
@@ -2192,6 +2193,7 @@ body {
     z-index: 10;
     align-items: center;
     justify-content: center;
+    gap: 1.5rem;
 }
 
 .project-form-modal:popover-open {
@@ -2214,6 +2216,7 @@ body {
     z-index: 1;
     width: min(100%, 640px);
     max-height: calc(100vh - 2rem);
+    gap:1.5rem;
     overflow-y: auto;
     padding: 1.5rem;
     background: #1b2633;
@@ -2368,6 +2371,7 @@ body {
   align-items: flex-start;
   gap: 0.8rem;
   padding-right: 2.5rem;
+  color: white;
 }
 
 .modal-heading__icon {
@@ -2403,7 +2407,8 @@ body {
 .modal-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
+  color: white;
 }
 
 .form-group--wide {

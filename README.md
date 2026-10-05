@@ -14,48 +14,34 @@
 
 ## 🚀 Progress Update
 
-- [x] Implemented authentication and authorization for the portfolio
-- [x] Adjusting the features according to user roles
-  **SUPERUSER**: All access to all features and CRUD operations
-  -> Username: superusr_tipen
-  -> Password: superusertipen123
 
-  **EDITOR**: Can only view and update projects/experience also star
-  -> Username: editor_tipen
-  -> Password: test12345
-
-  **USER**: Can only view and star projects
-  -> Username: user_tipen
-  -> Password: tiptiptip123
-
-  **UNAUTHENTICATED USER**: Can only view
-  
-  NOTES: Unauthenticated user will be redirected to login page if trying to access a feature that requires login
-
-- [x] Safely added guard against unauthenticated users
-- [x] Altered views, urls, and forms to register new routes
-- [x] Added some styling and logic in HTML files
-- [x] Created `Comment` models, views, and urls for comment section for each experience
+- [x] Implemented AJAX and changed from Python object to JSON for views that corresponds to experience and project section
+- [x] Refined and redesign modal, dropdown, searchbar components
 
 ---
 
+### Tugas 5
+1. **Debouncing** is a technique that delays the execution of a function until the user stops performing an action for a certain amount of time. In our case, the search bar for Projects and Experiences section which is an AJAX search feature prevents a request from being sent every time the user presses a key. For example, when typing some word such as "software engineer" , without debouncing, the browser could send six separate requests to the server. With debouncing, the request is only sent after the user stops typing for a short period, reducing unnecessary requests and server load. This makes the search feature more efficient and responsive, yet still maintain a good user experiences. 
+
+2. `await` is one of Javascript main keyword used to wait for an asynchronous operation such as `fetch()` to finish before continuing with the next line of code. With `await`, we can receive the Response object and then process its data, for example using `await response.json()`. If we do not use `await`, `fetch()` immediately returns a `Promise` which is a JavaScript object that relates with asynchronous calls instead of the actual response. As a result, we cannot directly access the response data before the `Promise` has been resolved. Therefore, `await` makes asynchronous code easier to read and allows us to handle the request in a sequential way.
+
+3. XSS (Cross-Site Scripting) is an attack where an attacker manages to inject malicious JavaScript code into a web page that is then executed in the user's browser. Data displayed through JavaScript/AJAX can be more vulnerable if we insert server-provided data directly into the DOM using innerHTML without proper escaping or sanitization. In Django templates, data such as `{{ data }}` is automatically escaped by default, which helps prevent HTML or JavaScript from being executed as code. However, when using JavaScript, developers need to be more careful about how data is inserted into the DOM, such as using `textContent` for plain text. Therefore, AJAX itself is not entirely insecure, but improper handling of dynamically displayed data can create an XSS vulnerability.
+
+
 ### AI Disclosure
-For this Individual Assignment, i use AI to help me thinking about a new feature that i should implement that still involves about **Authentication and Authorization**. I also use the help of AI to help me style and design the component for `comment_section.html` and `style.css` that corresponds to it.
+For this individual assignment, i used AI (ChatGPT) to help me learn, explore, and provide an example of AJAX operations. Besides that, i used AI to help me write some CSS styling because i am bad at making a good user interfaces, therefore i can use a bit of help. However, the AI made some mistakes that make me must to double check and make sure that gives a correct and efficient code. I also changed some of the code myself using my knowledge, such as some CSS styling i modified myself, optimized JavaScript code, etc.
 
-**PROMPT**: For this assignment, what features do you suggest to be implemented that still involve something about authentication and authorization?
-**PURPOSE**: To gain more experience on web development and get used to knowing the basic implementation of common features in software/app development
-**OUTPUT**: List of features recommendation -> Comments, Likes, Bookmark
+**PROMPT**: Act as Senior Frontend Engineer and UI UX Specialist, help me design a good modal, form and dropdown filter components.
+**OUTPUT**: Codes & UI design reference
+**PURPOSE**: To serve and provide the best user experience possible
 
-**PROMPT**: Help me style and design a responsive yet interactive comment section component for experience card. Make sure its responsive.
-**PURPOSE**: To rapidly increase development also learning purpose
-**OUTPUT**: CSS Code for `style.css` spesifically the comment features
+**PROMPT**: Explain simply about AJAX Django and write some code function sample.
+**OUTPUT**: Simple, detailed, and structured breakdown on what is AJAX and how to apply it in Django web development
+**PURPUSE**: To get a better understanding and make sure to apply the best practices before writing any code
 
 
-Besides AI Usage, i also read from Django Docs for official documentation regarding authentication and authorization, how to use Django Admin, and how to write Unit Tests for this new implemented features. For the styling necessity, as usual, i read from MDN CSS References and W3Schools for learning purpose & make sure the styling are spot on and responsive accross three devices. Last but not least, i always verify and make sure the code/suggestion that AI gived me is correct and follow the best practices.
+Even though this is classified as a medium level AI usage, me as a student and an enthusiastic learner still needs to learn the concepts by myself. Hence, here is some references i used throughout working on finishing the Individual Assignment 5.
 
 References:
-[Django Authentication and Authorization](https://docs.djangoproject.com/en/6.1/topics/auth/)
-[Django Admin](https://docs.djangoproject.com/en/6.1/ref/contrib/admin/)
-[Django Unit Tests](https://docs.djangoproject.com/en/6.1/topics/testing/overview/)
-[MDN CSS References](https://developer.mozilla.org/en-US/docs/Web/CSS)
-[W3Schools CSS](https://www.w3schools.com/css/)
+[Django AJAX Request Handling][https://www.geeksforgeeks.org/python/handling-ajax-request-in-django/]
+[MDN Fetch API][https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API]

@@ -8,13 +8,13 @@
       <span class="modal-heading__icon" aria-hidden="true">✦</span>
       <div>
         <p class="modal-eyebrow">New showcase item</p>
-        <h2 id="add-project-modal-title">Tambah Proyek Baru</h2>
+        <h2 id="add-project-modal-title" class="font-poppins font-white">Tambah Proyek Baru</h2>
       </div>
       <button type="button" class="project-form-modal__close"
         popovertarget="add-project-modal" popovertargetaction="hide"
         aria-label="Tutup form tambah proyek">×</button>
     </div>
-    <p class="modal-introduction">Tambahkan karya baru untuk ditampilkan di portfolio.</p>
+    <p class="modal-introduction font-poppins font-white">Tambahkan karya baru untuk ditampilkan di portfolio.</p>
     <form id="project-form" method="post" action="{% url 'main:create_project' %}"
       class="project-form" novalidate>
       {% csrf_token %}
