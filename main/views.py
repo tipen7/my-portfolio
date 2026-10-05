@@ -3,9 +3,8 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.core import serializers
-from django.http import HttpResponse, JsonResponse
-from django.db.models import Prefetch
+from django.http import JsonResponse
+from django.db.models import Count, Prefetch
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views.decorators.http import require_POST
 import datetime
@@ -15,7 +14,7 @@ from .forms import CommentForm, ExperienceForm, ProjectForm
 
 @require_POST
 def create_project_ajax(request):
-    if not request.user.is_superuser:
+    if not request.user.is_authenticated or not request.user.is_superuser:
         return JsonResponse(
             {"message": "Hanya pemilik portofolio yang dapat menambahkan proyek."},
             status=403,
@@ -26,6 +25,25 @@ def create_project_ajax(request):
         project = form.save()
         return JsonResponse(
             {"message": "Proyek berhasil ditambahkan.", "pk": str(project.id)},
+            status=201,
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+
+@require_POST
+def create_experience_ajax(request):
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan pengalaman."},
+            status=403,
+        )
+
+    form = ExperienceForm(request.POST)
+    if form.is_valid():
+        experience = form.save()
+        return JsonResponse(
+            {"message": "Pengalaman berhasil ditambahkan.", "pk": str(experience.id)},
             status=201,
         )
 
@@ -106,34 +124,10 @@ def show_main(request):
 
 # Experience
 def show_experience(request):
-    category_query = request.GET.get("category", "").strip()
-    experiences_queryset = Experience.objects.prefetch_related(
-        Prefetch(
-            "comments",
-            queryset=Comment.objects.select_related("commented_by").order_by("-created_at"),
-        )
-    ).order_by("-started_at")
-
-    if category_query:
-        experiences_queryset = experiences_queryset.filter(category=category_query)
-
-    experiences = list(experiences_queryset)
-    for experience in experiences:
-        experience.user_comment = next(
-            (
-                comment
-                for comment in experience.comments.all()
-                if request.user.is_authenticated
-                and comment.commented_by_id == request.user.id
-            ),
-            None,
-        )
-
     context = {
         "name": "Steven",
-        "experiences": experiences,
-        "category_query": category_query,
         "experience_categories": Experience.EXPERIENCE_CHOICES,
+        "form": ExperienceForm(),
         "can_edit": _is_editor_or_owner(request.user),
         "can_manage": request.user.is_authenticated and request.user.is_superuser,
     }
@@ -161,6 +155,29 @@ def comment_experience(request, experience_id):
         messages.error(request, "Please enter a comment of 100 characters or fewer.")
 
     return redirect("main:show_experience")
+
+
+@login_required(login_url="/login/")
+@require_POST
+def comment_experience_ajax(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+    comment = Comment.objects.filter(
+        experience=experience,
+        commented_by=request.user,
+    ).first()
+    form = CommentForm(request.POST, instance=comment)
+
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+    comment = form.save(commit=False)
+    comment.experience = experience
+    comment.commented_by = request.user
+    comment.save()
+    return JsonResponse(
+        {"message": "Komentar berhasil disimpan.", "pk": str(comment.pk)},
+        status=201,
+    )
 
 
 @login_required(login_url="/login/")
@@ -214,26 +231,69 @@ def delete_experience(request, experience_id):
 
 def get_experiences_json(request):
     category_query = request.GET.get("category", "").strip()
-    experiences = Experience.objects.all().order_by("-started_at")
+    search_query = request.GET.get("search", "").strip()
+    experiences = Experience.objects.prefetch_related(
+        Prefetch(
+            "comments",
+            queryset=Comment.objects.select_related("commented_by").order_by("-created_at"),
+        )
+    ).order_by("-started_at")
 
     if category_query:
         experiences = experiences.filter(category=category_query)
+    if search_query:
+        experiences = experiences.filter(title__icontains=search_query)
 
-    experiences_json = serializers.serialize("json", experiences)
-    return HttpResponse(experiences_json, content_type="application/json")
+    data = []
+    for experience in experiences:
+        comments = list(experience.comments.all())
+        data.append(
+            {
+                "pk": str(experience.pk),
+                "fields": {
+                    "title": experience.title,
+                    "description": experience.description,
+                    "category": experience.category,
+                    "category_display": experience.get_category_display(),
+                    "thumbnail": experience.thumbnail,
+                    "started_at": experience.started_at.isoformat(),
+                    "ended_at": experience.ended_at.isoformat()
+                    if experience.ended_at
+                    else None,
+                    "is_ongoing": experience.is_ongoing,
+                    "comments": [
+                        {
+                            "pk": str(comment.pk),
+                            "text": comment.text,
+                            "username": comment.commented_by.username,
+                            "created_at": comment.created_at.isoformat(),
+                        }
+                        for comment in comments
+                    ],
+                    "user_comment": next(
+                        (
+                            {
+                                "pk": str(comment.pk),
+                                "text": comment.text,
+                            }
+                            for comment in comments
+                            if request.user.is_authenticated
+                            and comment.commented_by_id == request.user.id
+                        ),
+                        None,
+                    ),
+                },
+            }
+        )
+    return JsonResponse(data, safe=False)
 
 # Projects
 def show_projects(request):
     title_query = request.GET.get("title", "").strip()
-    projects = Projects.objects.all()
-
-    if title_query:
-        projects = projects.filter(name__icontains=title_query)
 
     context = {
         "name": "Burhan",
         "title_query": title_query,
-        "projects": projects,
         "form": ProjectForm(),
         "can_edit": _is_editor_or_owner(request.user),
         "can_manage": request.user.is_authenticated and request.user.is_superuser,
@@ -282,28 +342,31 @@ def update_project(request, project_id):
 def get_projects_json(request):
 
     title_query = request.GET.get("title", "").strip()
-    projects = Projects.objects.all()
+    project_type = request.GET.get("type", "").strip()
+    projects = Projects.objects.annotate(star_count=Count("starred_by")).order_by("-name")
 
     if title_query:
         projects = projects.filter(name__icontains=title_query)
+    if project_type:
+        projects = projects.filter(type=project_type)
 
     data = []
     for project in projects:
-        starred_users = project.starred_by.all()
-        is_starred = request.user in starred_users if request.user.is_authenticated else False
-        starred_by_names = ", ".join([u.username for u in starred_users])
-
         data.append({
             "pk": str(project.id),
             "fields": {
                 "name": project.name,
                 "description": project.description,
+                "type": project.type,
+                "type_display": project.get_type_display(),
                 "tech_stack": project.tech_stack,
                 "url": project.url,
                 "image": project.image,
-                "star_count": starred_users.count(),
-                "is_starred": is_starred,
-                "starred_names": starred_by_names,
+                "star_count": project.star_count,
+                "is_starred": (
+                    request.user.is_authenticated
+                    and project.starred_by.filter(pk=request.user.pk).exists()
+                ),
             }
         })
 

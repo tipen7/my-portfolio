@@ -1,0 +1,10 @@
+<div class="component-field component-field--select">
+  <label class="sr-only" for="project-type">Filter tipe proyek</label>
+  <span class="component-field__icon" aria-hidden="true">⌄</span>
+  <select id="project-type" name="type" class="project-search__select" aria-label="Filter tipe proyek">
+    <option value="">Semua tipe</option>
+    {% for value, label in form.fields.type.choices %}
+    <option value="{{ value }}">{{ label }}</option>
+    {% endfor %}
+  </select>
+</div>

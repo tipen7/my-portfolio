@@ -1,8 +1,23 @@
-  {% load static %}
-  <div id="toast-component" class="toast-component toast-hidden" popover="manual">
-      <div class="toast-content">
-          <h3 id="toast-title" class="toast-title">This is a Sample Title</h3>
-          <p id="toast-message" class="toast-message">This is a Sample Message</p>
-      </div>
+{% load static %}
+<div
+  id="toast-component"
+  class="toast-component toast-hidden"
+  popover="manual"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  <span class="toast-icon" aria-hidden="true"></span>
+  <div class="toast-content">
+    <p class="toast-eyebrow">Portfolio update</p>
+    <h3 id="toast-title" class="toast-title">Notification</h3>
+    <p id="toast-message" class="toast-message"></p>
   </div>
-  <script src="{% static 'js/toast.js' %}"></script>
+  <button
+    type="button"
+    class="toast-close"
+    aria-label="Close notification"
+    onclick="dismissToast()"
+  >×</button>
+</div>
+<script src="{% static 'js/toast.js' %}"></script>

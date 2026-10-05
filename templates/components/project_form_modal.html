@@ -1,55 +1,39 @@
-<div
-  id="add-project-modal"
-  class="project-form-modal"
-  popover="auto"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="add-project-modal-title"
->
-  <button
-    type="button"
-    class="project-form-modal__backdrop"
-    popovertarget="add-project-modal"
-    popovertargetaction="hide"
-    aria-label="Tutup form tambah proyek"
-  ></button>
-
+<div id="add-project-modal" class="project-form-modal" popover="auto" role="dialog"
+  aria-modal="true" aria-labelledby="add-project-modal-title">
+  <button type="button" class="project-form-modal__backdrop"
+    popovertarget="add-project-modal" popovertargetaction="hide"
+    aria-label="Tutup form tambah proyek"></button>
   <div class="project-form-modal__content">
-    <button
-      type="button"
-      class="project-form-modal__close"
-      popovertarget="add-project-modal"
-      popovertargetaction="hide"
-      aria-label="Tutup form tambah proyek"
-    >
-      ×
-    </button>
-
-    <h2 id="add-project-modal-title">Tambah Proyek Baru</h2>
-    <form
-      id="project-form"
-      method="post"
-      action="{% url 'main:create_project' %}"
-      class="project-form"
-    >
-      {% csrf_token %} {% for field in form %}
-      <div class="form-group">
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }} {% for error in field.errors %}
-        <p class="form-error">{{ error }}</p>
+    <div class="modal-heading">
+      <span class="modal-heading__icon" aria-hidden="true">✦</span>
+      <div>
+        <p class="modal-eyebrow">New showcase item</p>
+        <h2 id="add-project-modal-title">Tambah Proyek Baru</h2>
+      </div>
+      <button type="button" class="project-form-modal__close"
+        popovertarget="add-project-modal" popovertargetaction="hide"
+        aria-label="Tutup form tambah proyek">×</button>
+    </div>
+    <p class="modal-introduction">Tambahkan karya baru untuk ditampilkan di portfolio.</p>
+    <form id="project-form" method="post" action="{% url 'main:create_project' %}"
+      class="project-form" novalidate>
+      {% csrf_token %}
+      <div class="modal-form-grid">
+        {% for field in form %}
+        <div class="form-group{% if field.errors %} form-group--error{% endif %}{% if field.name == 'description' %} form-group--wide{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
         {% endfor %}
       </div>
-      {% endfor %}
       <div class="project-form-modal__actions">
-        <button
-          type="button"
-          class="button button-secondary"
-          popovertarget="add-project-modal"
-          popovertargetaction="hide"
-        >
-          Batal
+        <button type="button" class="button button-ghost"
+          popovertarget="add-project-modal" popovertargetaction="hide">Batal</button>
+        <button type="submit" class="button button-submit">
+          <span class="button-submit__label">Tambah Proyek</span>
+          <span class="button-submit__spinner component-spinner" aria-hidden="true"></span>
         </button>
-        <button type="submit" class="button">Tambah Proyek</button>
       </div>
     </form>
   </div>

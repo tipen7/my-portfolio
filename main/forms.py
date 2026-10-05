@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm, TextInput, Textarea, URLInput, Select
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.html import strip_tags
 from main.models import Comment, Experience, Projects
 
 
@@ -83,6 +84,16 @@ class ExperienceForm(ModelForm):
 
         return cleaned_data
 
+    def clean_title(self):
+        return strip_tags(self.cleaned_data["title"]).strip()
+
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"]).strip()
+
+    def clean_thumbnail(self):
+        value = self.cleaned_data.get("thumbnail")
+        return strip_tags(value).strip() if value else value
+
 
 class CommentForm(ModelForm):
 
@@ -100,6 +111,9 @@ class CommentForm(ModelForm):
                 }
             ),
         }
+
+    def clean_text(self):
+        return strip_tags(self.cleaned_data["text"]).strip()
 
 class ProjectForm(ModelForm):
 
@@ -161,12 +175,19 @@ class ProjectForm(ModelForm):
         }
 
     def clean_tech_stack(self):
-
         data = self.cleaned_data.get('tech_stack')
 
         if isinstance(data, str) and data.strip():
-            return [item.strip() for item in data.split(',') if item.strip()]
+            return [
+                strip_tags(item).strip()
+                for item in data.split(',')
+                if strip_tags(item).strip()
+            ]
         
         return data
 
+    def clean_name(self):
+        return strip_tags(self.cleaned_data["name"]).strip()
 
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"]).strip()

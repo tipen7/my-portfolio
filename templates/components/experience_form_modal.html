@@ -1,0 +1,40 @@
+<div id="add-experience-modal" class="project-form-modal" popover="auto" role="dialog"
+  aria-modal="true" aria-labelledby="add-experience-modal-title">
+  <button type="button" class="project-form-modal__backdrop"
+    popovertarget="add-experience-modal" popovertargetaction="hide"
+    aria-label="Tutup form tambah pengalaman"></button>
+  <div class="project-form-modal__content">
+    <div class="modal-heading">
+      <span class="modal-heading__icon" aria-hidden="true">✦</span>
+      <div>
+        <p class="modal-eyebrow">Career timeline</p>
+        <h2 id="add-experience-modal-title">Tambah Pengalaman Baru</h2>
+      </div>
+      <button type="button" class="project-form-modal__close"
+        popovertarget="add-experience-modal" popovertargetaction="hide"
+        aria-label="Tutup form tambah pengalaman">×</button>
+    </div>
+    <p class="modal-introduction">Ceritakan pengalaman yang membentuk perjalananmu.</p>
+    <form id="experience-form" method="post" action="{% url 'main:create_experience' %}"
+      class="project-form" novalidate>
+      {% csrf_token %}
+      <div class="modal-form-grid">
+        {% for field in form %}
+        <div class="form-group{% if field.errors %} form-group--error{% endif %}{% if field.name == 'description' %} form-group--wide{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="project-form-modal__actions">
+        <button type="button" class="button button-ghost"
+          popovertarget="add-experience-modal" popovertargetaction="hide">Batal</button>
+        <button type="submit" class="button button-submit">
+          <span class="button-submit__label">Tambah Pengalaman</span>
+          <span class="button-submit__spinner component-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

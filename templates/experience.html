@@ -1,8 +1,11 @@
-{% extends 'base.html' %} {% block meta %}
-<title>Experience - {{ name }}</title>
-{% endblock meta %} {% block content %}
+{% extends 'base.html' %}
+{% load static %}
 
-<!-- Main Start -->
+{% block meta %}
+<title>Experience - {{ name }}</title>
+{% endblock meta %}
+
+{% block content %}
 <main>
   <section class="experience-section" id="experience">
     <div class="container">
@@ -15,101 +18,297 @@
           </p>
         </div>
         {% if can_manage %}
-        <a href="{% url 'main:create_experience' %}" class="button">
-          <span aria-hidden="true">+</span>
-          Tambah Experience
-        </a>
+        {% include "components/project_add_button.html" with target="add-experience-modal" label="Tambah Experience" %}
         {% endif %}
       </div>
 
-      <form
-        method="get"
-        action="{% url 'main:show_experience' %}"
-        class="experience-filter"
-      >
-        <label for="experience-category">Filter kategori</label>
-        <div class="experience-filter__select">
-          <select id="experience-category" name="category" class="form-control">
-            <option value="">Semua kategori</option>
-            {% for value, label in experience_categories %}
-            <option
-              value="{{ value }}"
-              {%
-              if
-              category_query=""
-              ="value"
-              %}selected{%
-              endif
-              %}
-            >
-              {{ label }}
-            </option>
-            {% endfor %}
-          </select>
+      <form id="experience-filter-form" class="experience-filter" role="search">
+        <button type="button" class="experience-filter__toggle" aria-expanded="true"
+          aria-controls="experience-filter-controls">
+          <span class="filter-icon" aria-hidden="true">⌕</span>
+          <span>Filter pengalaman</span>
+          <span class="experience-filter__chevron" aria-hidden="true"></span>
+        </button>
+        <div id="experience-filter-controls" class="experience-filter__controls">
+          <div class="filter-input">
+            <span class="filter-input__icon" aria-hidden="true">⌕</span>
+            <input id="experience-search" name="search" class="form-control font-poppins"
+              type="search" placeholder="Cari berdasarkan judul" aria-label="Cari pengalaman"
+              autocomplete="off">
+          </div>
+          <div class="component-field component-field--select experience-filter__select">
+            <span class="component-field__icon" aria-hidden="true">⌄</span>
+            <select id="experience-category" name="category" class="form-control"
+              aria-label="Filter kategori">
+              <option value="">Semua kategori</option>
+              {% for value, label in experience_categories %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="button filter-submit"><span aria-hidden="true">⌕</span> Terapkan</button>
         </div>
-        <button type="submit" class="button">Terapkan</button>
       </form>
 
-      <div class="experience-grid">
-        {% for experience in experiences %}
-        <article class="experience-card">
-          {% if experience.thumbnail %}
-          <img
-            class="experience-thumbnail"
-            src="{{ experience.thumbnail }}"
-            alt="{{ experience.title }}"
-            loading="lazy"
-          />
-          {% endif %}
-          <span class="experience-category">
-            {{ experience.get_category_display }}
-          </span>
-          <h2>{{ experience.title }}</h2>
-          <p class="experience-description">{{ experience.description }}</p>
-
-          {% if experience.is_ongoing %}
-          <p class="experience-status">
-            Sedang berlangsung ({{ experience.started_at|date:"d-m-Y" }} -
-            sekarang)
-          </p>
-          {% else %}
-          <p class="experience-status">
-            Selesai ({{ experience.started_at|date:"d-m-Y" }} - {{
-            experience.ended_at|date:"d-m-Y" }})
-          </p>
-          {% endif %} 
-          {% include "components/comment_section.html" with experience=experience %}
-
-          <div class="card-actions experience-actions">
-            {% if can_edit %}
-            <a
-              class="button button-secondary"
-              href="{% url 'main:update_experience' experience.id %}"
-              >Edit</a
-            >
-            {% endif %} 
-            {% if can_manage %} 
-              {% include "components/experience_delete_modal.html" with experience=experience %}
-            {% endif %}
-          </div>
-        </article>
-        {% empty %}
-        <div class="empty-state">
-          <p>
-            Belum ada pengalaman yang ditambahkan{% if category_query %} pada
-            kategori ini{% endif %}.
-          </p>
-          {% if can_manage %}
-          <a class="button" href="{% url 'main:create_experience' %}">
-            Tambah Experience
-          </a>
-          {% endif %}
-        </div>
-        {% endfor %}
+      <div id="experience-loading" class="empty-state" role="status" aria-live="polite">
+        {% include "components/spinner.html" with label="Memuat pengalaman" %}
+        <p>Memuat pengalaman...</p>
       </div>
+      <div id="experience-error" class="empty-state hide" role="alert">
+        <p>Gagal memuat data pengalaman.</p>
+        <button id="experience-retry" type="button" class="button button-secondary">Coba lagi</button>
+      </div>
+      <div id="experience-empty" class="empty-state hide" role="status">
+        <p>Belum ada pengalaman yang ditambahkan atau ditemukan.</p>
+      </div>
+      <div id="experience-grid" class="experience-grid hide" aria-live="polite"></div>
     </div>
   </section>
 </main>
-<!-- Main End -->
 
+{% if can_manage %}
+{% include "components/experience_form_modal.html" %}
+{% endif %}
+<script>
+  const EXPERIENCES_ENDPOINT = "{% url 'main:get_experiences_json' %}";
+  const CREATE_EXPERIENCE_ENDPOINT = "{% url 'main:create_experience_ajax' %}";
+  const COMMENT_ENDPOINT_TEMPLATE = "{% url 'main:comment_experience_ajax' '00000000-0000-0000-0000-000000000000' %}";
+  const EDIT_EXPERIENCE_URL_TEMPLATE = "{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}";
+  const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+  const CAN_EDIT = "{{ can_edit|yesno:'true,false' }}" === "true";
+  const CAN_MANAGE = "{{ can_manage|yesno:'true,false' }}" === "true";
+  const LOGIN_URL = "{% url 'main:login' %}";
+  const experienceGrid = document.getElementById("experience-grid");
+  const experienceLoading = document.getElementById("experience-loading");
+  const experienceError = document.getElementById("experience-error");
+  const experienceEmpty = document.getElementById("experience-empty");
+  const searchInput = document.getElementById("experience-search");
+  const categoryInput = document.getElementById("experience-category");
+  const experienceFilterToggle = document.querySelector(".experience-filter__toggle");
+  const experienceFilterControls = document.getElementById("experience-filter-controls");
+  let experienceAbortController;
+  let experienceSearchTimer;
+
+  experienceFilterToggle.addEventListener("click", () => {
+    const expanded = experienceFilterToggle.getAttribute("aria-expanded") === "true";
+    experienceFilterToggle.setAttribute("aria-expanded", String(!expanded));
+    experienceFilterControls.classList.toggle("is-collapsed", expanded);
+  });
+
+  function experienceState(state) {
+    experienceLoading.classList.toggle("hide", state !== "loading");
+    experienceError.classList.toggle("hide", state !== "error");
+    experienceEmpty.classList.toggle("hide", state !== "empty");
+    experienceGrid.classList.toggle("hide", state !== "grid");
+  }
+
+  function addText(parent, tag, text, className) {
+    const element = document.createElement(tag);
+    element.textContent = text ?? "";
+    if (className) element.className = className;
+    parent.appendChild(element);
+    return element;
+  }
+
+  function safeExternalUrl(value) {
+    if (!value) return "";
+    try {
+      const url = new URL(value, window.location.origin);
+      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+    } catch {
+      return "";
+    }
+  }
+
+  function formatDate(value) {
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+    }).format(new Date(value));
+  }
+
+  function csrfToken() {
+    return document.cookie.split("; ").find((row) => row.startsWith("csrftoken="))?.split("=")[1] || "";
+  }
+
+  function buildComment(comment) {
+    const article = document.createElement("article");
+    article.className = "experience-comment";
+    addText(article, "span", (comment.username || "?").slice(0, 1).toUpperCase(), "experience-comment__avatar");
+    const body = document.createElement("div");
+    body.className = "experience-comment__body";
+    const meta = document.createElement("div");
+    meta.className = "experience-comment__meta";
+    addText(meta, "strong", comment.username);
+    addText(meta, "time", `Sent ${formatDate(comment.created_at)}`);
+    body.appendChild(meta);
+    addText(body, "p", comment.text);
+    article.appendChild(body);
+    return article;
+  }
+
+  function buildExperience(item) {
+    const data = item.fields;
+    const card = document.createElement("article");
+    card.className = "experience-card";
+    const thumbnailUrl = safeExternalUrl(data.thumbnail);
+    if (thumbnailUrl) {
+      const image = document.createElement("img");
+      image.className = "experience-thumbnail";
+      image.src = thumbnailUrl;
+      image.alt = data.title;
+      image.loading = "lazy";
+      card.appendChild(image);
+    }
+    addText(card, "span", data.category_display, "experience-category");
+    addText(card, "h2", data.title);
+    addText(card, "p", data.description, "experience-description");
+    const status = data.is_ongoing
+      ? `Sedang berlangsung (${formatDate(data.started_at)} - sekarang)`
+      : `Selesai (${formatDate(data.started_at)} - ${formatDate(data.ended_at)})`;
+    addText(card, "p", status, "experience-status");
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "button experience-comments-trigger";
+    trigger.append("💬 Comments ");
+    addText(trigger, "span", String(data.comments.length), "experience-comments-count");
+    card.appendChild(trigger);
+
+    const comments = document.createElement("section");
+    comments.className = "experience-comments-popover";
+    comments.popover = "auto";
+    comments.role = "dialog";
+    const heading = document.createElement("h3");
+    heading.textContent = `Comments on ${data.title}`;
+    comments.appendChild(heading);
+    const commentsList = document.createElement("div");
+    commentsList.className = "experience-comments-list";
+    data.comments.forEach((comment) => commentsList.appendChild(buildComment(comment)));
+    if (!data.comments.length) addText(commentsList, "p", "No comments yet.", "experience-comments-empty");
+    comments.appendChild(commentsList);
+
+    if (IS_AUTHENTICATED) {
+      const form = document.createElement("form");
+      form.className = "experience-comment-form";
+      addText(form, "label", data.user_comment ? "Update your comment" : "Add a comment");
+      const textarea = document.createElement("textarea");
+      textarea.className = "form-control";
+      textarea.name = "text";
+      textarea.maxLength = 100;
+      textarea.required = true;
+      textarea.value = data.user_comment?.text || "";
+      form.appendChild(textarea);
+      const submit = document.createElement("button");
+      submit.type = "submit";
+      submit.className = "button";
+      submit.textContent = data.user_comment ? "Update comment" : "Comment";
+      form.appendChild(submit);
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        submit.disabled = true;
+        try {
+          const response = await fetch(COMMENT_ENDPOINT_TEMPLATE.replace("00000000-0000-0000-0000-000000000000", item.pk), {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken(), Accept: "application/json" },
+            body: new FormData(form),
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.errors ? Object.values(result.errors).flat().map((error) => error.message).join(" ") : result.message);
+          showToast("Berhasil", result.message, "success");
+          comments.hidePopover();
+          fetchExperiences();
+        } catch (error) {
+          showToast("Gagal menyimpan komentar", error.message || "Silakan coba lagi.", "error");
+        } finally {
+          submit.disabled = false;
+        }
+      });
+      comments.appendChild(form);
+    } else {
+      const login = document.createElement("p");
+      login.className = "experience-comments-login";
+      const link = document.createElement("a");
+      link.href = `${LOGIN_URL}?next=${encodeURIComponent(window.location.pathname)}`;
+      link.textContent = "Log in";
+      login.append(link, " to comment.");
+      comments.appendChild(login);
+    }
+    document.body.appendChild(comments);
+    trigger.addEventListener("click", () => comments.showPopover());
+
+    if (CAN_EDIT || CAN_MANAGE) {
+      const actions = document.createElement("div");
+      actions.className = "card-actions experience-actions";
+      if (CAN_EDIT) {
+        const edit = document.createElement("a");
+        edit.className = "button button-secondary";
+        edit.href = EDIT_EXPERIENCE_URL_TEMPLATE.replace("00000000-0000-0000-0000-000000000000", item.pk);
+        edit.textContent = "Edit";
+        actions.appendChild(edit);
+      }
+      card.appendChild(actions);
+    }
+    return card;
+  }
+
+  async function fetchExperiences() {
+    if (experienceAbortController) experienceAbortController.abort();
+    experienceAbortController = new AbortController();
+    experienceState("loading");
+    const params = new URLSearchParams();
+    if (searchInput.value.trim()) params.set("search", searchInput.value.trim());
+    if (categoryInput.value) params.set("category", categoryInput.value);
+    try {
+      const response = await fetch(`${EXPERIENCES_ENDPOINT}?${params}`, {
+        headers: { Accept: "application/json" },
+        signal: experienceAbortController.signal,
+      });
+      if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      const data = await response.json();
+      experienceGrid.replaceChildren(...data.map(buildExperience));
+      experienceState(data.length ? "grid" : "empty");
+    } catch (error) {
+      if (error.name === "AbortError") return;
+      experienceState("error");
+      showToast("Gagal memuat pengalaman", "Tidak dapat mengambil data dari server.", "error");
+    }
+  }
+
+  const experienceForm = document.getElementById("experience-form");
+  if (experienceForm) {
+    experienceForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submit = experienceForm.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      try {
+        const response = await fetch(CREATE_EXPERIENCE_ENDPOINT, {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken(), Accept: "application/json" },
+          body: new FormData(experienceForm),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.errors ? Object.values(result.errors).flat().map((error) => error.message).join(" ") : result.message);
+        experienceForm.reset();
+        document.getElementById("add-experience-modal").hidePopover();
+        showToast("Berhasil", result.message, "success");
+        fetchExperiences();
+      } catch (error) {
+        showToast("Gagal menambahkan pengalaman", error.message || "Silakan coba lagi.", "error");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  }
+  searchInput.addEventListener("input", () => {
+    clearTimeout(experienceSearchTimer);
+    experienceSearchTimer = setTimeout(fetchExperiences, 350);
+  });
+  categoryInput.addEventListener("change", fetchExperiences);
+  document.getElementById("experience-filter-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    fetchExperiences();
+  });
+  document.getElementById("experience-retry").addEventListener("click", fetchExperiences);
+  fetchExperiences();
+</script>
 {% endblock content %}

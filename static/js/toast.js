@@ -1,5 +1,14 @@
 let toastTimer;
 
+function dismissToast() {
+  const toastComponent = document.getElementById('toast-component');
+  if (!toastComponent) return;
+  clearTimeout(toastTimer);
+  toastComponent.classList.remove('toast-show');
+  toastComponent.classList.add('toast-hidden');
+  toastTimer = setTimeout(() => toastComponent.hidePopover(), 220);
+}
+
 function showToast(title, message, type = 'normal', duration = 3000) {
   const toastComponent = document.getElementById('toast-component');
   const toastTitle = document.getElementById('toast-title');
@@ -35,9 +44,5 @@ function showToast(title, message, type = 'normal', duration = 3000) {
   toastComponent.classList.add('toast-show');
 
   // Animasi hilang otomatis
-  toastTimer = setTimeout(() => {
-      toastComponent.classList.remove('toast-show');
-      toastComponent.classList.add('toast-hidden');
-      toastTimer = setTimeout(() => toastComponent.hidePopover(), 300);
-  }, duration);
+  toastTimer = setTimeout(dismissToast, duration);
 }

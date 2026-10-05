@@ -18,6 +18,8 @@ from main.views import (
     register,
     toggle_star,
     create_project_ajax,
+    create_experience_ajax,
+    comment_experience_ajax,
 )
 
 app_name = "main"
@@ -26,7 +28,9 @@ urlpatterns = [
     path("", show_main, name="show_main"),
     path("experience/", show_experience, name="show_experience"),
     path("experience/<uuid:experience_id>/comment/", comment_experience, name="comment_experience"),
+    path("experience/<uuid:experience_id>/comment-ajax/", comment_experience_ajax, name="comment_experience_ajax"),
     path("experience/create/", create_experience, name="create_experience"),
+    path("experience/add-ajax/", create_experience_ajax, name="create_experience_ajax"),
     path("experience/<uuid:experience_id>/edit/", update_experience, name="update_experience"),
     path("experience/<uuid:experience_id>/delete/", delete_experience, name="delete_experience"),
     path("projects/", show_projects, name="show_projects"),
