@@ -49,11 +49,12 @@
 {% if can_manage %}
   {% include "components/project_form_modal.html" %}
 {% endif %}
+{# Ensures the csrftoken cookie is set for API writes (star, delete, create). #}
+{% csrf_token %}
 <script>
-  const BASE_PROJECTS_ENDPOINT = "{% url 'main:get_projects_json' %}";
-  const CREATE_PROJECT_ENDPOINT = "{% url 'main:create_project_ajax' %}";
-  const DELETE_PROJECT_URL = "{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}";
-  const STAR_PROJECT_URL = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}";
+  const BASE_PROJECTS_ENDPOINT = "{% url 'api:project-list' %}";
+  const DETAIL_PROJECT_URL = "{% url 'api:project-detail' '00000000-0000-0000-0000-000000000000' %}";
+  const STAR_PROJECT_URL = "{% url 'api:project-star' '00000000-0000-0000-0000-000000000000' %}";
   const EDIT_PROJECT_URL = "{% url 'main:update_project' '00000000-0000-0000-0000-000000000000' %}";
   const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
   const CAN_EDIT = "{{ can_edit|yesno:'true,false' }}" === "true";
@@ -109,8 +110,8 @@
   }
 
   function buildProjectCard(item) {
-    const project = item.fields;
-    const projectId = item.pk;
+    const project = item;
+    const projectId = item.id;
     const card = document.createElement("article");
     card.className = "project-card";
 
@@ -162,17 +163,12 @@
 
     const starUrl = STAR_PROJECT_URL.replace("00000000-0000-0000-0000-000000000000", projectId);
     if (IS_AUTHENTICATED) {
-      const starForm = document.createElement("form");
-      starForm.method = "post";
-      starForm.action = starUrl;
-      starForm.className = "star-form";
-      starForm.innerHTML = `{% csrf_token %}`;
-      const starButton = createActionButton("", `button-star${project.is_starred ? " is-starred" : ""}`, "submit");
-      starButton.title = project.is_starred ? "Batalkan star" : "Beri star";
+      const starButton = createActionButton("", `button-star${project.is_starred ? " is-starred" : ""}`);
+      starButton.title = project.starred_by_names || (project.is_starred ? "Batalkan star" : "Beri star");
       starButton.append("★ ", project.is_starred ? "Unstar" : "Star");
       addText(starButton, "span", String(project.star_count), "star-count");
-      starForm.appendChild(starButton);
-      actions.appendChild(starForm);
+      starButton.addEventListener("click", () => sendProjectRequest(starButton, starUrl, "POST", "Star diperbarui."));
+      actions.appendChild(starButton);
     } else {
       const login = document.createElement("a");
       login.className = "button button-star";
@@ -183,17 +179,14 @@
     }
 
     if (CAN_MANAGE) {
-      const deleteForm = document.createElement("form");
-      deleteForm.method = "post";
-      deleteForm.action = DELETE_PROJECT_URL.replace("00000000-0000-0000-0000-000000000000", projectId);
-      deleteForm.className = "star-form";
-      deleteForm.innerHTML = `{% csrf_token %}`;
-      const deleteButton = createActionButton("Hapus Proyek", "button-danger", "submit");
-      deleteButton.addEventListener("click", (event) => {
-        if (!window.confirm(`Hapus ${escapeHtml(project.name)}?`)) event.preventDefault();
+      const deleteUrl = DETAIL_PROJECT_URL.replace("00000000-0000-0000-0000-000000000000", projectId);
+      const deleteButton = createActionButton("Hapus Proyek", "button-danger");
+      deleteButton.addEventListener("click", () => {
+        if (window.confirm(`Hapus ${project.name}?`)) {
+          sendProjectRequest(deleteButton, deleteUrl, "DELETE", "Proyek berhasil dihapus.");
+        }
       });
-      deleteForm.appendChild(deleteButton);
-      actions.appendChild(deleteForm);
+      actions.appendChild(deleteButton);
     }
     content.appendChild(actions);
     card.appendChild(content);
@@ -208,7 +201,46 @@
   }
 
   function getCookie(name) {
-    return document.cookie.split("; ").find((row) => row.startsWith(`${name}=`))?.split("=")[1] || "";
+    const row = document.cookie.split("; ").find((value) => value.startsWith(`${name}=`));
+    return row ? decodeURIComponent(row.slice(name.length + 1)) : "";
+  }
+
+  function apiErrorMessage(data, status) {
+    const messages = Object.entries(data || {}).flatMap(([field, value]) =>
+      (Array.isArray(value) ? value : [value])
+        .filter((message) => typeof message === "string")
+        .map((message) => (field === "detail" || field === "non_field_errors" ? message : `${field}: ${message}`)),
+    );
+    return messages.join(" ") || `Terjadi kesalahan (status ${status}).`;
+  }
+
+  async function writeProject(url, method, payload) {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: payload === undefined ? undefined : JSON.stringify(payload),
+    });
+    if (response.status === 204) return null;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+    return data;
+  }
+
+  async function sendProjectRequest(button, url, method, successMessage) {
+    button.disabled = true;
+    try {
+      await writeProject(url, method);
+      showToast("Berhasil", successMessage, "success");
+      fetchProjects();
+    } catch (error) {
+      showToast("Permintaan gagal", error.message, "error");
+    } finally {
+      button.disabled = false;
+    }
   }
 
   async function fetchProjects() {
@@ -216,7 +248,7 @@
     projectsAbortController = new AbortController();
     setState("loading");
     const params = new URLSearchParams();
-    if (searchInput.value.trim()) params.set("title", searchInput.value.trim());
+    if (searchInput.value.trim()) params.set("name", searchInput.value.trim());
     if (typeInput.value) params.set("type", typeInput.value);
     try {
       const response = await fetch(`${BASE_PROJECTS_ENDPOINT}?${params}`, {
@@ -242,21 +274,22 @@
       const submitButton = projectForm.querySelector('button[type="submit"]');
       submitButton.disabled = true;
       try {
-        const response = await fetch(CREATE_PROJECT_ENDPOINT, {
-          method: "POST",
-          headers: { "X-CSRFToken": getCookie("csrftoken"), Accept: "application/json" },
-          body: new FormData(projectForm),
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          const messages = result.errors
-            ? Object.values(result.errors).flat().map((error) => error.message).join(" ")
-            : (result.message || `Terjadi kesalahan (status ${response.status}).`);
-          throw new Error(messages);
-        }
+        const fields = new FormData(projectForm);
+        const payload = {
+          name: fields.get("name") || "",
+          description: fields.get("description") || "",
+          type: fields.get("type") || "personal",
+          url: fields.get("url") || null,
+          image: fields.get("image") || "",
+          tech_stack: String(fields.get("tech_stack") || "")
+            .split(",")
+            .map((technology) => technology.trim())
+            .filter(Boolean),
+        };
+        await writeProject(BASE_PROJECTS_ENDPOINT, "POST", payload);
         projectForm.reset();
         document.getElementById("add-project-modal").hidePopover();
-        showToast("Berhasil", result.message, "success");
+        showToast("Berhasil", "Proyek berhasil ditambahkan.", "success");
         fetchProjects();
       } catch (error) {
         showToast("Gagal menambahkan proyek", error.message, "error");

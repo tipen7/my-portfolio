@@ -130,7 +130,9 @@ class ProjectForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
+        # Projects.id has a uuid4 default, so a new instance already has a pk;
+        # use _state.adding to detect whether we are editing a saved project.
+        if not self.instance._state.adding:
             tech_stack = self.instance.tech_stack or []
             self.initial["tech_stack"] = ", ".join(tech_stack)
 
@@ -177,14 +179,14 @@ class ProjectForm(ModelForm):
     def clean_tech_stack(self):
         data = self.cleaned_data.get('tech_stack')
 
-        if isinstance(data, str) and data.strip():
-            return [
-                strip_tags(item).strip()
-                for item in data.split(',')
-                if strip_tags(item).strip()
-            ]
-        
-        return data
+        if not data:
+            return []
+
+        return [
+            strip_tags(item).strip()
+            for item in data.split(',')
+            if strip_tags(item).strip()
+        ]
 
     def clean_name(self):
         return strip_tags(self.cleaned_data["name"]).strip()

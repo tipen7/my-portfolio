@@ -43,21 +43,24 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
-        self.assertContains(response, self.experience.title)
-        self.assertContains(response, self.experience.description)
-        self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Sedang berlangsung")
+        self.assertContains(response, reverse("main:get_experiences_json"))
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
+        self.assertTrue(response.context["can_edit"])
+        self.assertTrue(response.context["can_manage"])
 
         Comment.objects.create(
             experience=self.experience,
             commented_by=self.owner,
             text="A useful experience.",
         )
-        response = self.client.get(reverse("main:show_experience"))
-        self.assertContains(response, "experience-comments-trigger")
-        self.assertContains(response, "experience-comment__avatar")
-        self.assertContains(response, "Sent")
+        fields = self.client.get(reverse("main:get_experiences_json")).json()[0]["fields"]
+        self.assertEqual(fields["title"], self.experience.title)
+        self.assertEqual(fields["description"], self.experience.description)
+        self.assertEqual(fields["category_display"], "Part-Time")
+        self.assertTrue(fields["is_ongoing"])
+        self.assertIsNone(fields["ended_at"])
+        self.assertEqual(fields["comments"][0]["username"], "owner")
+        self.assertEqual(fields["user_comment"]["text"], "A useful experience.")
 
     def test_authenticated_user_can_create_and_update_one_experience_comment(self):
         response = self.client.post(
@@ -109,27 +112,26 @@ class MainTest(TestCase):
         Experience.objects.all().delete()
         response = self.client.get(reverse("main:show_experience"))
 
-        self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
+        self.assertContains(response, "Belum ada pengalaman yang ditambahkan")
+        self.assertEqual(self.client.get(reverse("main:get_experiences_json")).json(), [])
 
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()
         self.experience.save()
-        response = self.client.get(reverse("main:show_experience"))
+        fields = self.client.get(reverse("main:get_experiences_json")).json()[0]["fields"]
 
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, "Selesai")
-        self.assertNotContains(response, "Sedang berlangsung")
+        self.assertFalse(fields["is_ongoing"])
+        self.assertEqual(fields["ended_at"], self.experience.ended_at.isoformat())
 
     def test_future_end_date_keeps_experience_ongoing(self):
         self.experience.ended_at = timezone.now() + timezone.timedelta(days=30)
         self.experience.save()
 
-        response = self.client.get(reverse("main:show_experience"))
+        fields = self.client.get(reverse("main:get_experiences_json")).json()[0]["fields"]
 
         self.assertTrue(self.experience.is_ongoing)
-        self.assertContains(response, "Sedang berlangsung")
-        self.assertContains(response, "sekarang")
-        self.assertNotContains(response, "None")
+        self.assertTrue(fields["is_ongoing"])
 
     def test_experience_form_rejects_end_date_before_start_date(self):
         response = self.client.post(
@@ -196,10 +198,20 @@ class MainTest(TestCase):
         self.assertContains(response, self.experience.title)
 
         filtered_response = self.client.get(
-            reverse("main:show_experience"),
+            reverse("main:get_experiences_json"),
             {"category": "internship"},
         )
-        self.assertNotContains(filtered_response, self.experience.title)
+        self.assertEqual(filtered_response.json(), [])
+
+        search_response = self.client.get(
+            reverse("main:get_experiences_json"),
+            {"search": "asisten"},
+        )
+        self.assertEqual(len(search_response.json()), 1)
+        self.assertEqual(
+            self.client.get(reverse("main:get_experiences_json"), {"search": "zzz"}).json(),
+            [],
+        )
 
     def test_project_page_displays_saved_project(self):
         project = Projects.objects.create(
@@ -213,11 +225,9 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_projects"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, project.name)
-        self.assertContains(response, "Django")
-        self.assertContains(response, "Next.js")
-        self.assertContains(response, "Hapus Proyek")
-        self.assertContains(response, f"Hapus {project.name}")
+        self.assertTemplateUsed(response, "projects.html")
+        self.assertContains(response, reverse("api:project-list"))
+        self.assertContains(response, 'id="add-project-modal"')
 
         api_response = self.client.get(reverse("main:get_projects_json"))
         self.assertEqual(api_response.status_code, 200)
@@ -236,8 +246,17 @@ class MainTest(TestCase):
             reverse("main:show_projects"),
             {"title": "Django"},
         )
+        self.assertContains(response, 'value="Django"')
 
-        self.assertContains(response, "Django Portfolio")
+        json_response = self.client.get(
+            reverse("main:get_projects_json"),
+            {"title": "django", "type": "personal"},
+        )
+        self.assertEqual(json_response.json()[0]["fields"]["name"], "Django Portfolio")
+        self.assertEqual(
+            self.client.get(reverse("main:get_projects_json"), {"type": "team"}).json(),
+            [],
+        )
 
     def test_project_can_be_updated_with_form(self):
         project = Projects.objects.create(
@@ -269,6 +288,16 @@ class MainTest(TestCase):
     def test_project_form_does_not_expose_starred_by(self):
         self.assertNotIn("starred_by", ProjectForm().fields)
 
+    def test_project_form_prefills_tech_stack_only_when_editing(self):
+        self.assertNotIn("tech_stack", ProjectForm().initial)
+        project = Projects.objects.create(
+            name="Saved", description="Desc", image="https://example.com/p.jpg",
+            tech_stack=["Django", "Python"],
+        )
+        self.assertEqual(
+            ProjectForm(instance=project).initial["tech_stack"], "Django, Python",
+        )
+
     def test_project_name_is_escaped_in_public_html_and_json(self):
         payload = "<img src=\"x\" onerror=\"alert('XSS!')\">"
         project = Projects.objects.create(
@@ -279,8 +308,6 @@ class MainTest(TestCase):
 
         response = self.client.get(reverse("main:show_projects"))
         self.assertNotContains(response, payload, html=False)
-        self.assertNotContains(response, payload, html=True)
-        self.assertContains(response, "&lt;img", html=False)
 
         api_response = self.client.get(reverse("main:get_projects_json"))
         self.assertEqual(api_response.json()[0]["fields"]["name"], payload)
@@ -295,30 +322,35 @@ class MainTest(TestCase):
         )
 
         response = self.client.get(reverse("main:show_projects"))
-        self.assertNotContains(response, '<img src=x onerror="alert(1)">', html=True)
-        self.assertContains(response, "&quot;&gt;&lt;img", html=False)
+        self.assertNotContains(response, payload, html=False)
+        api_response = self.client.get(reverse("main:get_projects_json"))
+        self.assertEqual(api_response.json()[0]["fields"]["name"], payload)
 
-    def test_ajax_project_creation_keeps_name_as_text(self):
-        payload = '<img src="x" onerror="alert(\'XSS!\')">'
+    def test_ajax_project_creation_strips_html(self):
+        data = {
+            "name": '<b>Safe</b> <img src="x" onerror="alert(1)">Name',
+            "description": "Created through the project modal.",
+            "type": "personal",
+            "image": "https://example.com/project.jpg",
+            "tech_stack": "Django, <i>Python</i>, ,",
+        }
         response = self.client.post(
             reverse("main:create_project_ajax"),
-            {
-                "name": payload,
-                "description": "Created through the project modal.",
-                "type": "personal",
-                "image": "https://example.com/project.jpg",
-                "tech_stack": "Django, Python",
-            },
+            data,
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertTrue(Projects.objects.filter(name=payload).exists())
-        self.assertNotContains(
-            self.client.get(reverse("main:show_projects")),
-            payload,
-            html=True,
+        project = Projects.objects.get(pk=response.json()["pk"])
+        self.assertEqual(project.name, "Safe Name")
+        self.assertEqual(project.tech_stack, ["Django", "Python"])
+
+        response = self.client.post(
+            reverse("main:create_project_ajax"),
+            {**data, "name": '<img src="x">'},
         )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("name", response.json()["errors"])
 
     def test_project_card_has_edit_and_delete_actions(self):
         project = Projects.objects.create(
@@ -330,11 +362,11 @@ class MainTest(TestCase):
 
         response = self.client.get(reverse("main:show_projects"))
 
-        self.assertContains(
-            response,
-            f'href="{reverse("main:update_project", args=[project.id])}"',
-        )
-        self.assertContains(response, "Hapus Proyek")
+        self.assertTrue(response.context["can_edit"])
+        self.assertTrue(response.context["can_manage"])
+        edit_response = self.client.get(reverse("main:update_project", args=[project.id]))
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertContains(edit_response, project.name)
 
     def test_anonymous_user_can_read_but_cannot_change_portfolio(self):
         self.client.logout()
@@ -346,11 +378,12 @@ class MainTest(TestCase):
 
         response = self.client.get(reverse("main:show_projects"))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(
-            response,
-            reverse("main:update_project", args=[project.id]),
+        self.assertFalse(response.context["can_edit"])
+        self.assertFalse(response.context["can_manage"])
+        self.assertNotContains(response, 'id="add-project-modal"')
+        self.assertFalse(
+            self.client.get(reverse("main:get_projects_json")).json()[0]["fields"]["is_starred"]
         )
-        self.assertNotContains(response, "Hapus Proyek")
         self.assertRedirects(
             self.client.post(reverse("main:toggle_star", args=[project.id])),
             f'{reverse("main:login")}?next={reverse("main:toggle_star", args=[project.id])}',
@@ -418,3 +451,206 @@ class MainTest(TestCase):
             ).status_code,
             403,
         )
+
+
+class AuthViewsTest(TestCase):
+    def test_register_get_and_post(self):
+        response = self.client.get(reverse("main:register"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "register.html")
+
+        response = self.client.post(reverse("main:register"), {
+            "username": "newuser",
+            "password1": "Str0ng-Passw0rd!",
+            "password2": "Str0ng-Passw0rd!",
+        })
+        self.assertRedirects(response, reverse("main:login"))
+        self.assertTrue(User.objects.filter(username="newuser").exists())
+
+    def test_login_logout(self):
+        User.objects.create_user(username="someone", password="pw-12345")
+        response = self.client.get(reverse("main:login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "login.html")
+
+        response = self.client.post(
+            reverse("main:login"), {"username": "someone", "password": "wrong"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+        response = self.client.post(
+            reverse("main:login"), {"username": "someone", "password": "pw-12345"},
+        )
+        self.assertRedirects(response, reverse("main:show_main"))
+        self.assertIn("last_login", response.cookies)
+        self.assertIn("_auth_user_id", self.client.session)
+
+        response = self.client.get(reverse("main:logout"))
+        self.assertRedirects(response, reverse("main:show_main"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+
+class RolePermissionViewsTest(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_superuser(username="owner", password="pw")
+        self.user = User.objects.create_user(username="user", password="pw")
+        self.editor = User.objects.create_user(username="editor", password="pw")
+        self.editor.groups.add(Group.objects.create(name="Editor"))
+        self.experience = Experience.objects.create(
+            title="Asisten Dosen", description="Desc", category="part-time",
+        )
+        self.project = Projects.objects.create(
+            name="Project", description="Desc", image="https://example.com/p.jpg",
+        )
+        self.project_data = {
+            "name": "Created Project",
+            "description": "Created description.",
+            "type": "team",
+            "url": "",
+            "image": "https://example.com/new.jpg",
+            "tech_stack": "",
+        }
+        self.experience_data = {
+            "title": "Created Experience",
+            "description": "Created description.",
+            "category": "research",
+            "thumbnail": "",
+            "started_at": "2026-01-01",
+            "ended_at": "",
+        }
+
+    def test_comment_str(self):
+        comment = Comment.objects.create(
+            experience=self.experience, commented_by=self.user, text="Nice",
+        )
+        self.assertEqual(str(comment), "Comment by user on Asisten Dosen")
+
+    def test_ajax_create_requires_owner(self):
+        for user in (None, self.user, self.editor):
+            if user:
+                self.client.force_login(user)
+            else:
+                self.client.logout()
+            response = self.client.post(reverse("main:create_project_ajax"), self.project_data)
+            self.assertEqual(response.status_code, 403)
+            response = self.client.post(reverse("main:create_experience_ajax"), self.experience_data)
+            self.assertEqual(response.status_code, 403)
+        self.assertFalse(Projects.objects.filter(name="Created Project").exists())
+        self.assertFalse(Experience.objects.filter(title="Created Experience").exists())
+
+    def test_owner_ajax_create_experience(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("main:create_experience_ajax"), self.experience_data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Experience.objects.filter(pk=response.json()["pk"]).exists())
+
+        response = self.client.post(
+            reverse("main:create_experience_ajax"), {**self.experience_data, "title": ""},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("title", response.json()["errors"])
+
+    def test_owner_ajax_create_project_with_empty_tech_stack(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("main:create_project_ajax"), self.project_data)
+        self.assertEqual(response.status_code, 201)
+        project = Projects.objects.get(pk=response.json()["pk"])
+        self.assertEqual(project.tech_stack, [])
+
+    def test_ajax_endpoints_require_post(self):
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(reverse("main:create_project_ajax")).status_code, 405)
+        self.assertEqual(self.client.get(reverse("main:create_experience_ajax")).status_code, 405)
+
+    def test_owner_create_project_form(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "projects_form.html")
+
+        response = self.client.post(reverse("main:create_project"), self.project_data)
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertTrue(Projects.objects.filter(name="Created Project").exists())
+
+    def test_owner_can_delete_project(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("main:delete_project", args=[self.project.id]))
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertFalse(Projects.objects.filter(pk=self.project.pk).exists())
+
+    def test_experience_form_pages(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("main:create_experience"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["is_editing"])
+
+        response = self.client.get(reverse("main:update_experience", args=[self.experience.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_editing"])
+
+    def test_editor_can_update_experience_but_not_create_or_delete(self):
+        self.client.force_login(self.editor)
+        response = self.client.post(
+            reverse("main:update_experience", args=[self.experience.id]),
+            {**self.experience_data, "title": "Edited by Editor"},
+        )
+        self.assertRedirects(response, reverse("main:show_experience"))
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Edited by Editor")
+
+        self.assertEqual(self.client.get(reverse("main:create_experience")).status_code, 403)
+        self.assertEqual(
+            self.client.post(reverse("main:delete_experience", args=[self.experience.id])).status_code,
+            403,
+        )
+        self.assertTrue(Experience.objects.filter(pk=self.experience.pk).exists())
+
+    def test_regular_user_cannot_update_experience(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("main:update_experience", args=[self.experience.id]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_invalid_comment_shows_error(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("main:comment_experience", args=[self.experience.id]),
+            {"text": "x" * 101},
+            follow=True,
+        )
+        self.assertRedirects(response, reverse("main:show_experience"))
+        self.assertIn(
+            "Please enter a comment of 100 characters or fewer.",
+            [str(message) for message in response.context["messages"]],
+        )
+        self.assertFalse(Comment.objects.exists())
+
+    def test_comment_ajax_create_update_and_validate(self):
+        url = reverse("main:comment_experience_ajax", args=[self.experience.id])
+        self.client.force_login(self.user)
+
+        response = self.client.post(url, {"text": "First"})
+        self.assertEqual(response.status_code, 201)
+        comment_pk = response.json()["pk"]
+
+        response = self.client.post(url, {"text": "<b>Updated</b>"})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["pk"], comment_pk)
+        self.assertEqual(Comment.objects.get(pk=comment_pk).text, "Updated")
+
+        response = self.client.post(url, {"text": "   "})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("text", response.json()["errors"])
+        self.assertEqual(Comment.objects.count(), 1)
+
+        missing = reverse(
+            "main:comment_experience_ajax", args=["00000000-0000-0000-0000-000000000000"],
+        )
+        self.assertEqual(self.client.post(missing, {"text": "x"}).status_code, 404)
+
+    def test_projects_json_is_starred_for_logged_in_user(self):
+        self.project.starred_by.add(self.user)
+        self.client.force_login(self.user)
+        fields = self.client.get(reverse("main:get_projects_json")).json()[0]["fields"]
+        self.assertTrue(fields["is_starred"])
+        self.assertEqual(fields["star_count"], 1)
