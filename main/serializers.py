@@ -1,14 +1,16 @@
 from django.utils.html import strip_tags
 from rest_framework import serializers
 
-from .models import Projects
+from .models import Projects, Experience
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+
     tech_stack = serializers.ListField(
         child=serializers.CharField(allow_blank=True, max_length=50),
         required=False,
     )
+
     type_display = serializers.CharField(source="get_type_display", read_only=True)
     star_count = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
@@ -46,7 +48,56 @@ class ProjectSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request is None or not request.user.is_authenticated:
             return False
-        return any(user.pk == request.user.pk for user in obj.starred_by.all())
+        return obj.starred_by.filter(pk=request.user.pk).exists()
+
+    def get_starred_by_names(self, obj):
+        return ", ".join(user.username for user in obj.starred_by.all())
+
+
+class ExperienceSerializer(serializers.ModelSerializer):
+
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+    star_count = serializers.SerializerMethodField()
+    is_starred = serializers.SerializerMethodField()
+    starred_by_names = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Experience
+        fields = ["id", "title", "description", "category_display", "thumbnail", "started_at", "ended_at", "star_count", "is_starred", "starred_by_names", "is_ongoing"]
+
+
+    def validate_title(self, value):
+        value = strip_tags(value).strip()
+        if not value:
+            raise serializers.ValidationError("Experience title is required.")
+        return value
+    
+
+    def validate_description(self, value):
+        value = strip_tags(value).strip()
+        if not value:
+            raise serializers.ValidationError("Experience description is required.")
+        return value
+
+    def validate(self, data):
+        started_at = data.get("started_at")
+        ended_at = data.get("ended_at")
+
+        if started_at and ended_at and ended_at < started_at:
+            raise serializers.ValidationError("End date must be on or after the start date.")
+
+        return data
+    
+    def get_star_count(self, obj):
+        return obj.starred_by.count()
+
+    def get_is_starred(self, obj):
+
+        request = self.context.get("request")
+        if request is None or not request.user.is_authenticated:
+            return False
+
+        return obj.starred_by.filter(pk=request.user.pk).exists()
 
     def get_starred_by_names(self, obj):
         return ", ".join(user.username for user in obj.starred_by.all())
