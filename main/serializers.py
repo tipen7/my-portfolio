@@ -1,7 +1,8 @@
 from django.utils.html import strip_tags
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
-from .models import Projects, Experience
+from .models import Projects, Experience, Comment
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -101,3 +102,28 @@ class ExperienceSerializer(serializers.ModelSerializer):
 
     def get_starred_by_names(self, obj):
         return ", ".join(user.username for user in obj.starred_by.all())
+
+class CommentSerializer(serializers.ModelSerializer):
+    
+    commented_by = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'text', 'experience', 'commented_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Comment.objects.all(),
+                fields=['experience', 'commented_by'],
+                message="You have already commented on this experience."
+            )
+        ]
+
+
+    def validate_text(self, value):
+        value = strip_tags(value).strip()
+        if not value:
+            raise serializers.ValidationError("Comment text is required.")
+        return value
