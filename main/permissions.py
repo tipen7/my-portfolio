@@ -14,29 +14,10 @@ def is_editor(user):
         and user.groups.filter(name=EDITOR_GROUP_NAME).exists()
     )
 
-class IsPortfolioOwnerOrEditor(BasePermission):
-    """
-    Role-based permission for a single-owner portfolio:
-
-    - visitor / regular user: no access
-    - Editor group member: read + update (PUT, PATCH)
-    - owner (superuser): everything, including create (POST) and DELETE
-
-    This does NOT filter objects per user. If the app ever has many owners
-    and private data, object-level checks and queryset scoping are needed.
-    """
-
-    message = "Only the portfolio owner or an Editor can change projects."
-
-    def has_permission(self, request, view):
-        if is_portfolio_owner(request.user):
-            return True
-        return request.method in ("PUT", "PATCH") and is_editor(request.user)
-
 class IsPortfolioOwnerOrReadOnly(BasePermission):
     """Anyone may read; only the portfolio owner (superuser) may write."""
 
-    message = "Only the portfolio owner can change projects."
+    message = "Only the portfolio owner can change this content."
 
     def has_permission(self, request, view):
         return request.method in SAFE_METHODS or is_portfolio_owner(request.user)
@@ -54,7 +35,7 @@ class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
     and private data, object-level checks and queryset scoping are needed.
     """
 
-    message = "Only the portfolio owner or an Editor can change projects."
+    message = "Only the portfolio owner or an Editor can change this content."
 
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:

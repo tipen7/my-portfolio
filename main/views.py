@@ -128,6 +128,7 @@ def show_experience(request):
         "name": "Steven",
         "experience_categories": Experience.EXPERIENCE_CHOICES,
         "form": ExperienceForm(),
+        "edit_form": ExperienceForm(auto_id="edit_%s"),
         "can_edit": _is_editor_or_owner(request.user),
         "can_manage": request.user.is_authenticated and request.user.is_superuser,
     }

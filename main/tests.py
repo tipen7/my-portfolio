@@ -43,7 +43,7 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
-        self.assertContains(response, reverse("main:get_experiences_json"))
+        self.assertContains(response, reverse("api:experience-list"))
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
         self.assertTrue(response.context["can_edit"])
         self.assertTrue(response.context["can_manage"])

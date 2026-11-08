@@ -9,5 +9,5 @@ urlpatterns = [
     path("experiences/", api_views.experience_list, name="experience-list"),
     path("experiences/<uuid:experience_id>/", api_views.experience_detail, name="experience-detail"),
     path("experiences/<uuid:experience_id>/star/", api_views.experience_star, name="experience-star"),
-    path("experiences/<uuid:experience_id>/comments/", api_views.comment_list, name="comment-list"),
+    path("experiences/<uuid:experience_id>/comments/", api_views.experience_comment_list, name="experience-comment-list"),
 ]
