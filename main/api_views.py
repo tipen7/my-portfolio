@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from main.models import Projects, Experience
 from main.permissions import IsPortfolioOwnerOrEditorOrReadOnly, IsPortfolioOwnerOrReadOnly, IsPortfolioOwnerOrEditor
-from main.serializers import ProjectSerializer, ExperienceSerializer
+from main.serializers import ProjectSerializer, ExperienceSerializer, CommentSerializer
 
 
 def _projects_queryset():
@@ -111,4 +111,45 @@ def experience_detail(request, experience_id):
 
     serializer.is_valid(raise_exception=True)
     serializer.save()
+    return Response(serializer.data)
+
+@api_view(["POST", "GET", "PUT", "PATCH"])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def experience_comment(request, experience_id):
+
+    experience = get_object_or_404(Experience, pk=experience_id)
+    if request.method == "POST":
+        serializer = CommentSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save(experience=experience)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    if request.method in ("GET", "HEAD"):
+        comments = experience.comments.select_related("commented_by").order_by("-created_at")
+        serializer = CommentSerializer(comments, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    serializer = CommentSerializer(
+        data=request.data, partial=request.method == "PATCH",
+        context={"request": request},
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save(experience=experience)
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def experience_star(request, experience_id):
+
+    experience = get_object_or_404(Experience, pk=experience_id)
+    if experience.starred_by.filter(pk=request.user.pk).exists():
+        experience.starred_by.remove(request.user)
+    else:
+        experience.starred_by.add(request.user)
+        
+    experience = Experience.objects.prefetch_related("starred_by").get(pk=experience.pk)
+    serializer = ExperienceSerializer(experience, context={"request": request})
     return Response(serializer.data)
