@@ -14,11 +14,10 @@ def is_editor(user):
         and user.groups.filter(name=EDITOR_GROUP_NAME).exists()
     )
 
-
 class IsPortfolioOwnerOrReadOnly(BasePermission):
     """Anyone may read; only the portfolio owner (superuser) may write."""
 
-    message = "Only the portfolio owner can change projects."
+    message = "Only the portfolio owner can change this content."
 
     def has_permission(self, request, view):
         return request.method in SAFE_METHODS or is_portfolio_owner(request.user)
@@ -36,7 +35,7 @@ class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
     and private data, object-level checks and queryset scoping are needed.
     """
 
-    message = "Only the portfolio owner or an Editor can change projects."
+    message = "Only the portfolio owner or an Editor can change this content."
 
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:

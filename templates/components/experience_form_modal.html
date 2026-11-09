@@ -1,38 +1,32 @@
-<div id="add-experience-modal" class="project-form-modal" popover="auto" role="dialog"
-  aria-modal="true" aria-labelledby="add-experience-modal-title">
-  <button type="button" class="project-form-modal__backdrop"
-    popovertarget="add-experience-modal" popovertargetaction="hide"
-    aria-label="Tutup form tambah pengalaman"></button>
-  <div class="project-form-modal__content">
-    <div class="modal-heading">
-      <span class="modal-heading__icon" aria-hidden="true">✦</span>
-      <div>
-        <p class="modal-eyebrow">Career timeline</p>
-        <h2 id="add-experience-modal-title">Tambah Pengalaman Baru</h2>
-      </div>
-      <button type="button" class="project-form-modal__close"
-        popovertarget="add-experience-modal" popovertargetaction="hide"
-        aria-label="Tutup form tambah pengalaman">×</button>
+<div id="{{ modal_id }}" class="modal modal--lg" popover="auto" role="dialog"
+  aria-labelledby="{{ modal_id }}-title">
+  <div class="modal__header">
+    <span class="modal__icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-{{ modal_icon|default:'briefcase' }}"/></svg></span>
+    <div class="modal__titles">
+      <p class="modal__eyebrow">Career Timeline</p>
+      <h2 id="{{ modal_id }}-title" class="modal__title">{{ modal_title }}</h2>
     </div>
-    <p class="modal-introduction">Ceritakan pengalaman yang membentuk perjalananmu.</p>
-    <form id="experience-form" method="post" action="{% url 'main:create_experience' %}"
-      class="project-form" novalidate>
-      {% csrf_token %}
-      <div class="modal-form-grid">
-        {% for field in form %}
-        <div class="form-group{% if field.errors %} form-group--error{% endif %}{% if field.name == 'description' %} form-group--wide{% endif %}">
+    <button type="button" class="icon-btn" popovertarget="{{ modal_id }}"
+      popovertargetaction="hide" aria-label="Tutup form pengalaman">
+      <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
+  </div>
+  <div class="modal__body">
+    <p class="modal__intro">{{ modal_introduction }}</p>
+    <form id="{{ form_id }}" novalidate>
+      <div class="form-grid">
+        {% for field in modal_form %}
+        <div class="form-group{% if field.name == 'description' %} form-group--wide{% endif %}">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
           {{ field }}
-          {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
         </div>
         {% endfor %}
       </div>
-      <div class="project-form-modal__actions">
-        <button type="button" class="button button-ghost"
-          popovertarget="add-experience-modal" popovertargetaction="hide">Batal</button>
-        <button type="submit" class="button button-submit">
-          <span class="button-submit__label">Tambah Pengalaman</span>
-          <span class="button-submit__spinner component-spinner" aria-hidden="true"></span>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" popovertarget="{{ modal_id }}"
+          popovertargetaction="hide">Cancel</button>
+        <button type="submit" class="btn">
+          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span>{{ submit_label }}</span>
         </button>
       </div>
     </form>

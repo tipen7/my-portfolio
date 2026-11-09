@@ -1,9 +1,5 @@
-<button
-  type="button"
-  class="button project-add-button component-action"
-  popovertarget="{{ target|default:'add-project-modal' }}"
-  aria-haspopup="dialog"
->
-  <span class="component-action__icon" aria-hidden="true">+</span>
-  <span>{{ label|default:"Tambah Proyek" }}</span>
+<button type="button" class="btn"
+  popovertarget="{{ target|default:'add-project-modal' }}" aria-haspopup="dialog">
+  <svg class="icon icon--spin" aria-hidden="true"><use href="#i-plus"/></svg>
+  <span>{{ label|default:"Add Project" }}</span>
 </button>

@@ -7,51 +7,74 @@
 
 {% block content %}
 <main>
-  <section class="project-section" id="project">
-    <div class="container">
-      <div class="project-heading">
-        <div>
-          <p class="section-kicker">Selected work</p>
-          <h1>Projects</h1>
-          {% if can_manage %}
-          {% include "components/project_add_button.html" %}
-          {% endif %}
-        </div>
-        <form id="project-search-form" class="project-search" role="search">
-          <label class="sr-only" for="search-input">Cari proyek</label>
-          <div class="filter-input project-search__input-wrap">
-            <span class="filter-input__icon" aria-hidden="true">⌕</span>
+  <section class="container page-header" id="project">
+    <div class="page-header__row reveal">
+      <div>
+        <h1 class="page-title">Projects</h1>
+        <p class="page-lead">List of projects that I've been making!</p>
+      </div>
+      {% if can_manage %}
+      {% include "components/project_add_button.html" %}
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="container" aria-label="Daftar proyek">
+    <form id="project-search-form" class="filterbar" role="search">
+      <div class="filterbar__panel">
+        <div class="filterbar__controls">
+          <div class="input-icon">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+            <label class="sr-only" for="search-input">Find project</label>
             <input id="search-input" type="search" name="title" value="{{ title_query }}"
-              placeholder="Cari berdasarkan nama proyek" class="project-search__input"
+              placeholder="Find project based on name" class="form-control"
               aria-label="Cari berdasarkan nama proyek" autocomplete="off">
           </div>
           {% include "components/project_filter_dropdown.html" %}
-          <button type="submit" class="button filter-submit"><span aria-hidden="true">⌕</span> Cari</button>
-        </form>
+          <button type="submit" class="btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span>Search</span>
+          </button>
+        </div>
       </div>
+    </form>
 
-      <div id="loading" class="empty-state" role="status" aria-live="polite">
-        {% include "components/spinner.html" with label="Memuat proyek" %}
-        <p>Memuat projects...</p>
+    <div id="loading" role="status" aria-live="polite">
+      <span class="sr-only">Loading projects...</span>
+      <div class="skeleton-grid" aria-hidden="true">
+        {% for i in "123456"|make_list %}
+        <div class="skeleton-card">
+          <div class="skeleton skeleton--media"></div>
+          <div class="skeleton skeleton--line"></div>
+          <div class="skeleton skeleton--line skeleton--short"></div>
+          <div class="skeleton skeleton--line"></div>
+          <div class="skeleton skeleton--pill"></div>
+        </div>
+        {% endfor %}
       </div>
-      <div id="error" class="empty-state hide" role="alert">
-        <p>Gagal memuat data projects. Silakan coba lagi.</p>
-        <button id="retry-button" type="button" class="button button-secondary">Coba lagi</button>
-      </div>
-      <div id="empty" class="empty-state hide" role="status">
-        <p>Belum ada proyek yang ditambahkan atau ditemukan.</p>
-      </div>
-      <div id="grid" class="project-grid hide" aria-live="polite"></div>
     </div>
+    <div id="error" class="empty-state empty-state--error hide" role="alert">
+      <span class="empty-state__icon"><svg class="icon icon--xl" aria-hidden="true"><use href="#i-alert-circle"/></svg></span>
+      <p>Failed to load projects, please try again...</p>
+      <button id="retry-button" type="button" class="btn btn--secondary">
+        <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg><span>Retry</span>
+      </button>
+    </div>
+    <div id="empty" class="empty-state hide" role="status">
+      <span class="empty-state__icon"><svg class="icon icon--xl" aria-hidden="true"><use href="#i-inbox"/></svg></span>
+      <p>There are no projects with such attributes yet.</p>
+    </div>
+    <div id="grid" class="card-grid hide" aria-live="polite"></div>
   </section>
 </main>
 
 {% if can_manage %}
   {% include "components/project_form_modal.html" %}
 {% endif %}
-{# Ensures the csrftoken cookie is set for API writes (star, delete, create). #}
+
 {% csrf_token %}
 <script>
+  const { icon, el, safeExternalUrl, apiRequest, setBusy } = UI;
+  const PLACEHOLDER_ID = "00000000-0000-0000-0000-000000000000";
   const BASE_PROJECTS_ENDPOINT = "{% url 'api:project-list' %}";
   const DETAIL_PROJECT_URL = "{% url 'api:project-detail' '00000000-0000-0000-0000-000000000000' %}";
   const STAR_PROJECT_URL = "{% url 'api:project-star' '00000000-0000-0000-0000-000000000000' %}";
@@ -70,12 +93,6 @@
   let projectsAbortController;
   let searchDebounceTimer;
 
-  function escapeHtml(value) {
-    const element = document.createElement("span");
-    element.textContent = value ?? "";
-    return element.innerHTML;
-  }
-
   function setState(state) {
     loadingState.classList.toggle("hide", state !== "loading");
     errorState.classList.toggle("hide", state !== "error");
@@ -83,170 +100,110 @@
     gridContainer.classList.toggle("hide", state !== "grid");
   }
 
-  function addText(parent, tag, text, className) {
-    const element = document.createElement(tag);
-    element.textContent = text ?? "";
-    if (className) element.className = className;
-    parent.appendChild(element);
-    return element;
+  function endpoint(template, id) {
+    return template.replace(PLACEHOLDER_ID, id);
   }
 
-  function createActionButton(text, className, type = "button") {
-    const button = document.createElement("button");
-    button.type = type;
-    button.className = `button ${className}`;
-    button.textContent = text;
-    return button;
+  function loginHref() {
+    return `${LOGIN_URL}?next=${encodeURIComponent(window.location.pathname)}`;
   }
 
-  function safeExternalUrl(value) {
-    if (!value) return "";
-    try {
-      const url = new URL(value, window.location.origin);
-      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
-    } catch {
-      return "";
-    }
-  }
+  function buildProjectCard(project, index = 0) {
+    const card = el("article", { class: "card card--interactive item-card", style: `--i:${Math.min(index, 12)}`, "data-id": project.id });
 
-  function buildProjectCard(item) {
-    const project = item;
-    const projectId = item.id;
-    const card = document.createElement("article");
-    card.className = "project-card";
+    // Media
+    const media = el("div", { class: "item-card__media" });
+    UI.mediaImage(media, project.image, `${project.name} project preview`, "folder");
+    media.appendChild(el("span", { class: "badge badge--overlay", text: project.type_display }));
+    card.appendChild(media);
 
-    const header = document.createElement("div");
-    header.className = "project-card-header";
-    addText(header, "span", project.type_display, "project-type");
-    card.appendChild(header);
-
-    const thumbnail = document.createElement("div");
-    thumbnail.className = `project-thumbnail${project.image ? "" : " project-thumbnail-empty"}`;
-    const imageUrl = safeExternalUrl(project.image);
-    if (imageUrl) {
-      const image = document.createElement("img");
-      image.src = imageUrl;
-      image.alt = `${project.name} project preview`;
-      image.loading = "lazy";
-      thumbnail.appendChild(image);
-    } else {
-      addText(thumbnail, "span", "Project preview\nComing Soon!");
-    }
-    card.appendChild(thumbnail);
-
-    const content = document.createElement("div");
-    content.className = "project-card-content";
-    addText(content, "h2", project.name, "project-name");
-    addText(content, "p", project.description, "project-description");
+    // Body
+    const body = el("div", { class: "item-card__body" },
+      el("h2", { class: "item-card__title", text: project.name }),
+      el("p", { class: "item-card__desc", text: project.description }));
 
     const projectUrl = safeExternalUrl(project.url);
     if (projectUrl) {
-      const link = document.createElement("a");
-      link.className = "project-url";
-      link.href = projectUrl;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      addText(link, "span", "Visit project");
-      addText(link, "span", "↗", "project-url-arrow");
-      content.appendChild(link);
+      body.appendChild(el("a", { class: "item-card__link", href: projectUrl, target: "_blank", rel: "noopener noreferrer" },
+        el("span", { text: "Visit project" }), icon("external", "icon--sm")));
     }
 
-    const actions = document.createElement("div");
-    actions.className = "card-actions";
-    if (CAN_EDIT) {
-      const edit = document.createElement("a");
-      edit.className = "button button-secondary";
-      edit.href = EDIT_PROJECT_URL.replace("00000000-0000-0000-0000-000000000000", projectId);
-      edit.textContent = "Edit";
-      actions.appendChild(edit);
+    const techStack = Array.isArray(project.tech_stack) ? project.tech_stack : [];
+    if (techStack.length) {
+      const list = el("div", { class: "tech-list" });
+      techStack.forEach((technology) => list.appendChild(UI.techChip(technology)));
+      body.appendChild(list);
     }
+    card.appendChild(body);
 
-    const starUrl = STAR_PROJECT_URL.replace("00000000-0000-0000-0000-000000000000", projectId);
+    // Actions
+    const actions = el("div", { class: "item-card__actions" });
     if (IS_AUTHENTICATED) {
-      const starButton = createActionButton("", `button-star${project.is_starred ? " is-starred" : ""}`);
-      starButton.title = project.starred_by_names || (project.is_starred ? "Batalkan star" : "Beri star");
-      starButton.append("★ ", project.is_starred ? "Unstar" : "Star");
-      addText(starButton, "span", String(project.star_count), "star-count");
-      starButton.addEventListener("click", () => sendProjectRequest(starButton, starUrl, "POST", "Star diperbarui."));
-      actions.appendChild(starButton);
-    } else {
-      const login = document.createElement("a");
-      login.className = "button button-star";
-      login.href = `${LOGIN_URL}?next=${encodeURIComponent(window.location.pathname)}`;
-      login.append("★ Login to star ");
-      addText(login, "span", String(project.star_count), "star-count");
-      actions.appendChild(login);
-    }
-
-    if (CAN_MANAGE) {
-      const deleteUrl = DETAIL_PROJECT_URL.replace("00000000-0000-0000-0000-000000000000", projectId);
-      const deleteButton = createActionButton("Hapus Proyek", "button-danger");
-      deleteButton.addEventListener("click", () => {
-        if (window.confirm(`Hapus ${project.name}?`)) {
-          sendProjectRequest(deleteButton, deleteUrl, "DELETE", "Proyek berhasil dihapus.");
+      const label = project.is_starred ? "Batalkan star" : "Beri star";
+      const star = el("button", {
+        type: "button", class: `btn btn--star btn--sm${project.is_starred ? " is-starred" : ""}`,
+        title: project.starred_by_names || label, "aria-pressed": String(project.is_starred), "aria-label": `${label}: ${project.name}`,
+      }, icon("star", "icon--sm"), el("span", { text: project.is_starred ? "Unstar" : "Star" }),
+      el("span", { class: "btn__count", text: String(project.star_count) }));
+      star.addEventListener("click", async () => {
+        setBusy(star, true);
+        try {
+          const updated = await apiRequest(endpoint(STAR_PROJECT_URL, project.id), "POST");
+          const fresh = buildProjectCard(updated, 0);
+          fresh.style.animation = "none";
+          card.replaceWith(fresh);
+          const freshStar = fresh.querySelector(".btn--star");
+          freshStar?.classList.add("is-popping");
+          freshStar?.addEventListener("animationend", () => freshStar.classList.remove("is-popping"), { once: true });
+        } catch (error) {
+          showToast("Gagal memberi star", error.message, "error");
+          setBusy(star, false);
         }
       });
-      actions.appendChild(deleteButton);
+      actions.appendChild(star);
+    } else {
+      actions.appendChild(el("a", { class: "btn btn--star btn--sm", href: loginHref(), title: "Login untuk memberi star" },
+        icon("star", "icon--sm"), el("span", { text: "Login to star" }),
+        el("span", { class: "btn__count", text: String(project.star_count) })));
     }
-    content.appendChild(actions);
-    card.appendChild(content);
 
-    const techStack = document.createElement("div");
-    techStack.className = "project-tech-stack";
-    (Array.isArray(project.tech_stack) ? project.tech_stack : []).forEach((technology) => {
-      addText(techStack, "span", technology, "project-tech");
-    });
-    card.appendChild(techStack);
+    const tools = el("div", { class: "spacer" });
+    if (CAN_EDIT) {
+      tools.appendChild(el("a", {
+        class: "icon-btn icon-btn--sm icon-btn--action", href: endpoint(EDIT_PROJECT_URL, project.id),
+        "aria-label": `Edit ${project.name}`, title: "Edit",
+      }, icon("pencil")));
+    }
+    if (CAN_MANAGE) {
+      const remove = el("button", { type: "button", class: "icon-btn icon-btn--sm icon-btn--danger", "aria-label": `Hapus ${project.name}`, title: "Hapus" }, icon("trash"));
+      remove.addEventListener("click", async () => {
+        const confirmed = await UI.confirm({
+          title: "Hapus proyek?",
+          message: `"${project.name}" akan dihapus secara permanen dan tidak dapat dipulihkan.`,
+          confirmLabel: "Ya, hapus",
+        });
+        if (!confirmed) return;
+        setBusy(remove, true);
+        try {
+          await apiRequest(endpoint(DETAIL_PROJECT_URL, project.id), "DELETE");
+          showToast("Berhasil", "Proyek berhasil dihapus.", "success");
+          await fetchProjects({ silent: true });
+        } catch (error) {
+          showToast("Permintaan gagal", error.message, "error");
+          setBusy(remove, false);
+        }
+      });
+      tools.appendChild(remove);
+    }
+    if (tools.children.length) actions.appendChild(tools);
+    card.appendChild(actions);
     return card;
   }
 
-  function getCookie(name) {
-    const row = document.cookie.split("; ").find((value) => value.startsWith(`${name}=`));
-    return row ? decodeURIComponent(row.slice(name.length + 1)) : "";
-  }
-
-  function apiErrorMessage(data, status) {
-    const messages = Object.entries(data || {}).flatMap(([field, value]) =>
-      (Array.isArray(value) ? value : [value])
-        .filter((message) => typeof message === "string")
-        .map((message) => (field === "detail" || field === "non_field_errors" ? message : `${field}: ${message}`)),
-    );
-    return messages.join(" ") || `Terjadi kesalahan (status ${status}).`;
-  }
-
-  async function writeProject(url, method, payload) {
-    const response = await fetch(url, {
-      method,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: payload === undefined ? undefined : JSON.stringify(payload),
-    });
-    if (response.status === 204) return null;
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
-    return data;
-  }
-
-  async function sendProjectRequest(button, url, method, successMessage) {
-    button.disabled = true;
-    try {
-      await writeProject(url, method);
-      showToast("Berhasil", successMessage, "success");
-      fetchProjects();
-    } catch (error) {
-      showToast("Permintaan gagal", error.message, "error");
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-  async function fetchProjects() {
+  async function fetchProjects({ silent = false } = {}) {
     if (projectsAbortController) projectsAbortController.abort();
     projectsAbortController = new AbortController();
-    setState("loading");
+    if (!silent) setState("loading");
     const params = new URLSearchParams();
     if (searchInput.value.trim()) params.set("name", searchInput.value.trim());
     if (typeInput.value) params.set("type", typeInput.value);
@@ -272,7 +229,7 @@
     projectForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const submitButton = projectForm.querySelector('button[type="submit"]');
-      submitButton.disabled = true;
+      setBusy(submitButton, true);
       try {
         const fields = new FormData(projectForm);
         const payload = {
@@ -286,15 +243,15 @@
             .map((technology) => technology.trim())
             .filter(Boolean),
         };
-        await writeProject(BASE_PROJECTS_ENDPOINT, "POST", payload);
+        await apiRequest(BASE_PROJECTS_ENDPOINT, "POST", payload);
         projectForm.reset();
         document.getElementById("add-project-modal").hidePopover();
         showToast("Berhasil", "Proyek berhasil ditambahkan.", "success");
-        fetchProjects();
+        await fetchProjects({ silent: true });
       } catch (error) {
         showToast("Gagal menambahkan proyek", error.message, "error");
       } finally {
-        submitButton.disabled = false;
+        setBusy(submitButton, false);
       }
     });
   }
@@ -303,13 +260,13 @@
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(fetchProjects, 350);
   });
-  typeInput.addEventListener("change", fetchProjects);
+  typeInput.addEventListener("change", () => fetchProjects());
   searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
     clearTimeout(searchDebounceTimer);
     fetchProjects();
   });
-  document.getElementById("retry-button").addEventListener("click", fetchProjects);
+  document.getElementById("retry-button").addEventListener("click", () => fetchProjects());
   fetchProjects();
 </script>
 {% endblock content %}

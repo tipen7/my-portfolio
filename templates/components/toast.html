@@ -1,23 +1,5 @@
-{% load static %}
-<div
-  id="toast-component"
-  class="toast-component toast-hidden"
-  popover="manual"
-  role="status"
-  aria-live="polite"
-  aria-atomic="true"
->
-  <span class="toast-icon" aria-hidden="true"></span>
-  <div class="toast-content">
-    <p class="toast-eyebrow">Portfolio update</p>
-    <h3 id="toast-title" class="toast-title">Notification</h3>
-    <p id="toast-message" class="toast-message"></p>
-  </div>
-  <button
-    type="button"
-    class="toast-close"
-    aria-label="Close notification"
-    onclick="dismissToast()"
-  >×</button>
-</div>
-<script src="{% static 'js/toast.js' %}"></script>
+<div id="toast-region" popover="manual" aria-live="polite" aria-atomic="false"></div>
+{# Django flash messages are turned into toasts on load. #}
+{% if messages %}
+<div hidden data-flash>{% for message in messages %}<span data-level="{{ message.level_tag }}">{{ message }}</span>{% endfor %}</div>
+{% endif %}

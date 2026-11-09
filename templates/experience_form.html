@@ -1,39 +1,33 @@
-{% extends "base.html" %} {% block meta %}
-<title>
-  {% if is_editing %}Edit{% else %}Add{% endif %} Experience - {{ name }}
-</title>
-{% endblock meta %} {% block content %}
+{% extends "base.html" %}
+{% block meta %}
+<title>{% if is_editing %}Edit{% else %}Add{% endif %} Experience - {{ name }}</title>
+{% endblock meta %}
+{% block content %}
 <main>
-  <section class="experience-section experience-form-section">
-    <div class="container">
+  <section class="card form-page">
+    <div class="form-page__head">
       <p class="section-kicker">Portfolio Management</p>
-      <h1>
-        {% if is_editing %}Edit Experience{% else %}Add Experience{% endif %}
-      </h1>
-
-      <form method="post" class="experience-form">
-        {% csrf_token %} 
-        {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }} 
-          {% for error in field.errors %}
-          <p class="form-error">{{ error }}</p>
-          {% endfor %}
-        </div>
-        {% endfor %}
-        <div class="form-actions">
-          <button type="submit" class="button">
-            {% if is_editing %}Simpan Perubahan{% else %}Tambah Experience{% endif %}
-          </button>
-          <a
-            href="{% url 'main:show_experience' %}"
-            class="button button-secondary"
-            >Batal</a
-          >
-        </div>
-      </form>
+      <h1 class="page-title">{% if is_editing %}Edit Experience{% else %}Add Experience{% endif %}</h1>
     </div>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group{% if field.errors %} has-error{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}
+        <p class="form-error"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-alert-circle"/></svg>{{ error }}</p>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="form-actions">
+        <button type="submit" class="btn">
+          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+          <span>{% if is_editing %}Save Changes{% else %}Add Experience{% endif %}</span>
+        </button>
+        <a href="{% url 'main:show_experience' %}" class="btn btn--ghost">Cancel</a>
+      </div>
+    </form>
   </section>
 </main>
 {% endblock content %}
