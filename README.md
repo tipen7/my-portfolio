@@ -15,6 +15,6 @@
 ## 🚀 Progress Update
 
 
-- [x] Created APIs using DRF 
+- [x] Created APIs using DRF
 
 ---

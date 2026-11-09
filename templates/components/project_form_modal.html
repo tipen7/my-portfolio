@@ -1,38 +1,33 @@
-<div id="add-project-modal" class="project-form-modal" popover="auto" role="dialog"
-  aria-modal="true" aria-labelledby="add-project-modal-title">
-  <button type="button" class="project-form-modal__backdrop"
-    popovertarget="add-project-modal" popovertargetaction="hide"
-    aria-label="Tutup form tambah proyek"></button>
-  <div class="project-form-modal__content">
-    <div class="modal-heading">
-      <span class="modal-heading__icon" aria-hidden="true">✦</span>
-      <div>
-        <p class="modal-eyebrow">New showcase item</p>
-        <h2 id="add-project-modal-title" class="font-poppins font-white">Tambah Proyek Baru</h2>
-      </div>
-      <button type="button" class="project-form-modal__close"
-        popovertarget="add-project-modal" popovertargetaction="hide"
-        aria-label="Tutup form tambah proyek">×</button>
+<div id="add-project-modal" class="modal modal--lg" popover="auto" role="dialog"
+  aria-labelledby="add-project-modal-title">
+  <div class="modal__header">
+    <span class="modal__icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-folder"/></svg></span>
+    <div class="modal__titles">
+      <p class="modal__eyebrow">New showcase item</p>
+      <h2 id="add-project-modal-title" class="modal__title">Add New Project</h2>
     </div>
-    <p class="modal-introduction font-poppins font-white">Tambahkan karya baru untuk ditampilkan di portfolio.</p>
-    <form id="project-form" method="post" action="{% url 'main:create_project' %}"
-      class="project-form" novalidate>
+    <button type="button" class="icon-btn" popovertarget="add-project-modal"
+      popovertargetaction="hide" aria-label="Tutup form tambah proyek">
+      <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
+  </div>
+  <div class="modal__body">
+    <p class="modal__intro">Add a new project to be showcased in this portfolio</p>
+    <form id="project-form" method="post" action="{% url 'main:create_project' %}" novalidate>
       {% csrf_token %}
-      <div class="modal-form-grid">
+      <div class="form-grid">
         {% for field in form %}
-        <div class="form-group{% if field.errors %} form-group--error{% endif %}{% if field.name == 'description' %} form-group--wide{% endif %}">
+        <div class="form-group{% if field.name == 'description' %} form-group--wide{% endif %}">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
           {{ field }}
-          {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
         </div>
         {% endfor %}
       </div>
-      <div class="project-form-modal__actions">
-        <button type="button" class="button button-ghost"
-          popovertarget="add-project-modal" popovertargetaction="hide">Batal</button>
-        <button type="submit" class="button button-submit">
-          <span class="button-submit__label">Tambah Proyek</span>
-          <span class="button-submit__spinner component-spinner" aria-hidden="true"></span>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" popovertarget="add-project-modal"
+          popovertargetaction="hide">Cancel</button>
+        <button type="submit" class="btn">
+          <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>Add Project</span>
         </button>
       </div>
     </form>

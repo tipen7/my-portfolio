@@ -1,34 +1,34 @@
-{% extends "base.html" %} {% block meta %}
-<title>
-  {% if is_editing %}Edit{% else %}Add{% endif %} Project - {{ name }}
-</title>
-{% endblock meta %} {% block content %}
+{% extends "base.html" %}
+{% block meta %}
+<title>{% if is_editing %}Edit{% else %}Add{% endif %} Project - {{ name }}</title>
+{% endblock meta %}
+{% block content %}
 <main>
-  <section class="project-section">
-    <div class="container">
-      <h1>
-        {% if is_editing %}Edit Project{% else %}Add New Project{% endif %}
-      </h1>
-      <form
-        method="post"
-        action="{% if is_editing %}{% url 'main:update_project' project.id %}{% else %}{% url 'main:create_project' %}{% endif %}"
-        class="project-form"
-      >
-        {% csrf_token %} {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }} {% for error in field.errors %}
-          {% endfor %}
-        </div> 
-        {% endfor %}
-        <button type="submit" class="button">
-          {% if is_editing %}Simpan Perubahan{% else %}Tambah Project{% endif %}
-        </button>
-        <a href="{% url 'main:show_projects' %}" class="button button-secondary"
-          >Batal</a
-        >
-      </form>
+  <section class="card form-page">
+    <div class="form-page__head">
+      <p class="section-kicker">Portfolio Management</p>
+      <h1 class="page-title">{% if is_editing %}Edit Project{% else %}Add New Project{% endif %}</h1>
     </div>
+    <form method="post"
+      action="{% if is_editing %}{% url 'main:update_project' project.id %}{% else %}{% url 'main:create_project' %}{% endif %}">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group{% if field.errors %} has-error{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}
+        <p class="form-error"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-alert-circle"/></svg>{{ error }}</p>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="form-actions">
+        <button type="submit" class="btn">
+          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+          <span>{% if is_editing %}Save Changes{% else %}Add Project{% endif %}</span>
+        </button>
+        <a href="{% url 'main:show_projects' %}" class="btn btn--ghost">Cancel</a>
+      </div>
+    </form>
   </section>
 </main>
 {% endblock content %}

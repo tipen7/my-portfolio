@@ -1,70 +1,245 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="/static/css/style.css">
-    {% block meta %} {% endblock meta %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#00880f" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    (function () {
+      var root = document.documentElement;
+      root.classList.add("js");
+      try {
+        var saved = localStorage.getItem("theme");
+        if (saved === "light" || saved === "dark") root.dataset.theme = saved;
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}">
+  <script>window.TECH_ICON_BASE = "{% static 'img/tech/' %}";</script>
+  <script src="{% static 'js/ui.js' %}"></script>
+  {% block meta %}{% endblock meta %}
 </head>
-</html>
-
 <body>
-    
-    <!-- Navigation Bar Start -->
-    <nav class="nav-container">
-      <div class="nav-brand">
-        <a href="#about">
-          <svg
-            width="800px"
-            height="800px"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            class="nav-logo"
-          >
-            <path
-              fill-rule="nonzero"
-              clip-rule="nonzero"
-              d="M5.46619 2.00322C5.46619 1.44916 5.91535 1 6.46941 1H9.47907C10.0331 1 10.4823 1.44915 10.4823 2.00322V5.01288C10.4823 5.09948 10.4713 5.18352 10.4507 5.26368C10.4713 5.34385 10.4823 5.42789 10.4823 5.51449V8.02254H11.7363V6.0161C11.7363 5.60055 12.0732 5.26368 12.4887 5.26368C12.9043 5.26368 13.2411 5.60055 13.2411 6.0161V8.02254H15.2476C15.6631 8.02254 16 8.35941 16 8.77495C16 9.1905 15.6631 9.52737 15.2476 9.52737H13.2113C13.0634 11.3518 12.3727 12.8078 11.2779 13.8375C10.045 14.9972 8.37374 15.5467 6.59481 15.5467C4.97058 15.5467 3.43674 15.0891 2.24224 14.1255C1.03896 13.1549 0.236443 11.7155 0.0125343 9.86728C-0.115917 8.80699 0.763545 8.02254 1.70412 8.02254H1.95492V5.51449C1.95492 4.96043 2.40408 4.51127 2.95814 4.51127H5.46619V2.00322ZM5.46619 6.0161H3.45975V8.02254H5.46619V6.0161ZM1.70412 9.52737C1.63196 9.52737 1.57447 9.55683 1.54064 9.59191C1.51066 9.62299 1.50235 9.65252 1.50644 9.68629C1.68777 11.1831 2.31696 12.2524 3.18705 12.9543C4.06593 13.6632 5.24713 14.0419 6.59481 14.0419C8.071 14.0419 9.34667 13.5882 10.2469 12.7414C11.0115 12.0222 11.5598 10.9686 11.7007 9.52737H1.70412ZM6.97102 8.02254H8.97746V6.0161H6.97102V8.02254ZM6.97102 4.51127H8.97746V2.50483H6.97102V4.51127Z"
-              fill="#FFFFFF"
-            />
-          </svg>
+  {% include 'components/icons.html' %}
+  {% url 'main:show_main' as home_url %}
+  {% url 'main:show_experience' as experience_url %}
+  {% url 'main:show_projects' as projects_url %}
+
+  <!-- Navigation bar (Prisma-style) -->
+  <header class="navbar" data-navbar>
+    <nav class="container navbar__inner" aria-label="Navigasi utama">
+      <a class="brand" href="{{ home_url }}" aria-label="Beranda">
+        <span class="brand__mark"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-logo"/></svg></span>
+        <span>Steven</span>
+      </a>
+
+      <!-- Desktop menu -->
+      <div class="nav-menu">
+        <div class="nav-item" data-menu>
+          <button type="button" class="nav-trigger" aria-expanded="false" aria-controls="menu-portfolio">
+            Portfolio <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+          </button>
+          <div class="mega" id="menu-portfolio">
+            <div class="mega__grid">
+              <a class="mega__link" style="--i:0" href="{{ home_url }}">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
+                <span><span class="mega__title">About</span><span class="mega__desc">Little there is to know about me</span></span>
+              </a>
+              <a class="mega__link" style="--i:1" href="{{ home_url }}#skills">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-zap"/></svg></span>
+                <span><span class="mega__title">Skills</span><span class="mega__desc">My tech stacks expertise</span></span>
+              </a>
+              <a class="mega__link" style="--i:2" href="{{ experience_url }}">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg></span>
+                <span><span class="mega__title">Experience</span><span class="mega__desc">Career and college life</span></span>
+              </a>
+              <a class="mega__link" style="--i:3" href="{{ projects_url }}">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg></span>
+                <span><span class="mega__title">Projects</span><span class="mega__desc">Personal and team projects</span></span>
+              </a>
+              <div class="mega__feature">
+                <p><strong>Open for collaboration</strong>View my complete CV</p>
+                <a class="btn btn--light btn--sm" href="https://drive.google.com/file/d/1lgCe6z5ltBhBI3Xj9rTezXS1Z09OFJmg/view?usp=sharing" target="_blank" rel="noopener noreferrer">
+                  <svg class="icon icon--sm" aria-hidden="true"><use href="#i-file-text"/></svg><span>Resume</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a class="nav-link" href="{{ experience_url }}" {% if request.path == experience_url %}aria-current="page"{% endif %}>Experience</a>
+        <a class="nav-link" href="{{ projects_url }}" {% if request.path == projects_url %}aria-current="page"{% endif %}>Projects</a>
+
+        <div class="nav-item nav-item--narrow" data-menu>
+          <button type="button" class="nav-trigger" aria-expanded="false" aria-controls="menu-connect">
+            Connect <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+          </button>
+          <div class="mega mega--narrow" id="menu-connect">
+            <div class="mega__grid">
+              <a class="mega__link" style="--i:0" href="mailto:tipdyanizha@gmail.com">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg></span>
+                <span><span class="mega__title">Email</span><span class="mega__desc">Send me a direct message</span></span>
+              </a>
+              <a class="mega__link" style="--i:1" href="https://github.com/tipen7" target="_blank" rel="noopener noreferrer">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg></span>
+                <span><span class="mega__title">GitHub</span><span class="mega__desc">My codes and repository contributions</span></span>
+              </a>
+              <a class="mega__link" style="--i:2" href="https://www.linkedin.com/in/steven-ananda-41175a378/" target="_blank" rel="noopener noreferrer">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-linkedin"/></svg></span>
+                <span><span class="mega__title">LinkedIn</span><span class="mega__desc">Professional network</span></span>
+              </a>
+              <a class="mega__link" style="--i:3" href="https://instagram.com/vendynzha" target="_blank" rel="noopener noreferrer">
+                <span class="mega__icon"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg></span>
+                <span><span class="mega__title">Instagram</span><span class="mega__desc">Get to know me socially</span></span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a class="github-pill nav-desktop-only" href="https://github.com/tipen7" target="_blank" rel="noopener noreferrer" aria-label="GitHub tipen7">
+          <svg class="icon" aria-hidden="true"><use href="#i-github"/></svg><span class="github-pill__label">tipen7</span>
         </a>
-        <span class="navbar-span">
-          <a class="nav-link" href="{% url 'main:show_main' %}">About</a>
-          <a class="nav-link" href="#skills">Skills</a>
-          <a class="nav-link" href="{% url 'main:show_experience' %}"
-            >Experience</a
-          >
-          <a class="nav-link" href="{% url 'main:show_projects' %}">Projects</a>
-          {% if user.is_authenticated %}
-            <span class="nav-user">{{ user.username }}</span>
-            <a class="logout-button" href="{% url 'main:logout' %}">Logout</a>
-          {% else %}
-            <a href="{% url 'main:login' %}">Login</a>
-            <a href="{% url 'main:register' %}">Register</a>
-          {% endif %}
-        </span>
+        <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Ganti tema">
+          <svg class="icon icon--lg icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+          <svg class="icon icon--lg icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        </button>
+        {% if user.is_authenticated %}
+          <div class="user-menu nav-auth-desktop" data-menu>
+            <button type="button" class="user-menu__trigger" aria-expanded="false" aria-controls="menu-user">
+              <span class="avatar" aria-hidden="true">{{ user.username|slice:":1"|upper }}</span>
+              <span class="user-menu__name">{{ user.username }}</span>
+              <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+            </button>
+            <div class="user-menu__panel" id="menu-user">
+              <div class="user-menu__head"><small>Logged in as</small><strong>{{ user.username }}</strong></div>
+              <a class="menu-item" href="{{ experience_url }}"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg>Experience</a>
+              <a class="menu-item" href="{{ projects_url }}"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg>Projects</a>
+              <a class="menu-item menu-item--danger" href="{% url 'main:logout' %}"><svg class="icon" aria-hidden="true"><use href="#i-log-out"/></svg>Logout</a>
+            </div>
+          </div>
+        {% else %}
+          <a class="btn btn--ghost btn--sm nav-auth-desktop" href="{% url 'main:login' %}">Login</a>
+          <a class="btn btn--sm nav-auth-desktop" href="{% url 'main:register' %}">Register</a>
+        {% endif %}
+        <button type="button" class="nav-burger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Buka menu">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </nav>
-    <!-- Navigation Bar End -->
 
-    {% block content %} {% endblock content %}
-
-    <!-- Footer Start -->
-    <footer class="footer-container">
-      <div class="footer-content">
-        <p class="body font-poppins text-white">
-          &copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.
-        </p>
+    <!-- Mobile drawer -->
+    <div class="mobile-menu" id="mobile-menu">
+      <div class="mobile-group" data-accordion>
+        <button type="button" class="mobile-group__trigger" aria-expanded="false">
+          Portfolio <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+        </button>
+        <div class="mobile-group__panel"><div>
+          <a class="menu-item" href="{{ home_url }}"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg>About</a>
+          <a class="menu-item" href="{{ home_url }}#skills"><svg class="icon" aria-hidden="true"><use href="#i-zap"/></svg>Skills</a>
+          <a class="menu-item" href="{{ experience_url }}"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg>Experience</a>
+          <a class="menu-item" href="{{ projects_url }}"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg>Projects</a>
+        </div></div>
       </div>
-    </footer>
+      <a class="mobile-link" href="{{ experience_url }}" {% if request.path == experience_url %}aria-current="page"{% endif %}>Experience</a>
+      <a class="mobile-link" href="{{ projects_url }}" {% if request.path == projects_url %}aria-current="page"{% endif %}>Projects</a>
+      <div class="mobile-group" data-accordion>
+        <button type="button" class="mobile-group__trigger" aria-expanded="false">
+          Connect <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+        </button>
+        <div class="mobile-group__panel"><div>
+          <a class="menu-item" href="mailto:tipdyanizha@gmail.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>Email</a>
+          <a class="menu-item" href="https://github.com/tipen7" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>
+          <a class="menu-item" href="https://www.linkedin.com/in/steven-ananda-41175a378/" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-linkedin"/></svg>LinkedIn</a>
+          <a class="menu-item" href="https://instagram.com/vendynzha" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg>Instagram</a>
+        </div></div>
+      </div>
+      <div class="mobile-menu__cta">
+        {% if user.is_authenticated %}
+          <p class="text-muted">Logged is as <strong>{{ user.username }}</strong></p>
+          <a class="btn btn--danger-soft btn--lg" href="{% url 'main:logout' %}"><svg class="icon" aria-hidden="true"><use href="#i-log-out"/></svg><span>Logout</span></a>
+        {% else %}
+          <a class="btn btn--lg" href="{% url 'main:register' %}"><svg class="icon" aria-hidden="true"><use href="#i-user-plus"/></svg><span>Register</span></a>
+          <a class="btn btn--secondary btn--lg" href="{% url 'main:login' %}"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg><span>Login</span></a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
 
-    {% include 'components/toast.html' %}
-    <!-- Footer End -->
+  {% block content %}{% endblock content %}
 
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <a class="brand" href="{{ home_url }}">
+            <span>Me me me</span>
+          </a>
+          <p>An undergraduate Information System student of Faculty of Computer Science, University of Indonesia that focuses on Backend Development, Data Science, and Competitive Programming.</p>
+          <div class="footer__socials">
+            <a href="https://github.com/tipen7" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg></a>
+            <a href="https://www.linkedin.com/in/steven-ananda-41175a378/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg class="icon" aria-hidden="true"><use href="#i-linkedin"/></svg></a>
+            <a href="https://instagram.com/vendynzha" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg></a>
+            <a href="mailto:tipdyanizha@gmail.com" aria-label="Email"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg></a>
+          </div>
+        </div>
+
+        <div class="footer__cols">
+          <nav aria-label="Portfolio">
+            <h2 class="footer__title">Portfolio</h2>
+            <ul class="footer__list">
+              <li><a href="{{ home_url }}">About</a></li>
+              <li><a href="{{ home_url }}#skills">Skills</a></li>
+              <li><a href="{{ experience_url }}">Experience</a></li>
+              <li><a href="{{ projects_url }}">Projects</a></li>
+            </ul>
+          </nav>
+          <nav aria-label="Connect">
+            <h2 class="footer__title">Connect</h2>
+            <ul class="footer__list">
+              <li><a href="mailto:tipdyanizha@gmail.com">Email</a></li>
+              <li><a href="https://github.com/tipen7" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+              <li><a href="https://www.linkedin.com/in/steven-ananda-41175a378/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+              <li><a href="https://instagram.com/vendynzha" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+            </ul>
+          </nav>
+          <nav aria-label="Akun">
+            <h2 class="footer__title">Account</h2>
+            <ul class="footer__list">
+              {% if user.is_authenticated %}
+              <li><span>Logged in as {{ user.username }}</span></li>
+              <li><a href="{% url 'main:logout' %}">Logout</a></li>
+              {% else %}
+              <li><a href="{% url 'main:login' %}">Login</a></li>
+              <li><a href="{% url 'main:register' %}">Register</a></li>
+              {% endif %}
+              <li><a href="https://drive.google.com/file/d/1lgCe6z5ltBhBI3Xj9rTezXS1Z09OFJmg/view?usp=sharing" target="_blank" rel="noopener noreferrer">Resume (CV)</a></li>
+            </ul>
+          </nav>
+          <div>
+            <h2 class="footer__title">Created with</h2>
+            <div class="footer__stack" data-tech-chips="Django,Python,PostgreSQL,JavaScript"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p>&copy; {% now "Y" %} Steven Dyanizha Ananda. Faculty of Computer Science, University of Indonesia.</p>
+        <p>Developed with <span aria-hidden="true">Love 💚</span><span class="sr-only">cinta</span> <a href="#top" data-scroll-top>Return to top</a></p>
+      </div>
+    </div>
+  </footer>
+
+  {% include 'components/toast.html' %}
 </body>
-
+</html>

@@ -1,33 +1,38 @@
 {% extends "base.html" %}
 {% block meta %}
-    <title>Login - {{ name }}</title>
+<title>Login - {{ name }}</title>
 {% endblock meta %}
 {% block content %}
-    <main>
-        <section class="experience-section">
-            <div class="container">
-                <h1>Login</h1>
-                {% for message in messages %}
-                    <p class="form-message">{{ message }}</p>
-                {% endfor %}
-                <form method="post" action="{% url 'main:login' %}" class="project-form">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="form-group">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <p class="form-error">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                        <p class="form-error">{{ error }}</p>
-                    {% endfor %}
-                    <button type="submit" class="button">Login</button>
-                </form>
-                <p>Belum punya akun? <a href="{% url 'main:register' %}">Daftar di sini</a>.</p>
-            </div>
-        </section>
-    </main>
+<main>
+  <section class="auth">
+    <aside class="auth__aside">
+      <h2>Logged in to give comments &amp; stars.</h2>
+      <p>Save your favorite projects and leave comments for experience!</p>
+    </aside>
+    <div class="auth__main">
+      <div>
+        <h1 class="page-title">Login</h1>
+      </div>
+      <form method="post" action="{% url 'main:login' %}" class="auth__form">
+        {% csrf_token %}
+        {% for error in form.non_field_errors %}
+          <p class="form-error"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-alert-circle"/></svg>{{ error }}</p>
+        {% endfor %}
+        {% for field in form %}
+          <div class="form-group{% if field.errors %} has-error{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}
+              <p class="form-error"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-alert-circle"/></svg>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn btn--lg btn--block">
+          <svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg><span>Login</span>
+        </button>
+      </form>
+      <p class="auth__switch">Did'nt have an account? <a href="{% url 'main:register' %}">Register here!</a>.</p>
+    </div>
+  </section>
+</main>
 {% endblock content %}

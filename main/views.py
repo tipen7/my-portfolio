@@ -96,7 +96,7 @@ def login_user(request):
         return response
 
     context = {
-        "name": "Burhan",
+        "name": "Steven",
         "form": form,
     }
     return render(request, "login.html", context)
@@ -293,7 +293,7 @@ def show_projects(request):
     title_query = request.GET.get("title", "").strip()
 
     context = {
-        "name": "Burhan",
+        "name": "Steven",
         "title_query": title_query,
         "form": ProjectForm(),
         "can_edit": _is_editor_or_owner(request.user),
