@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-9=umsc1ht=r_^80-m(8kltjb3oqah!%5)1zc4=vwymkqg46qz$
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "steven-dyanizha-myportofolio.pws.cs.ui.ac.id", ".pws.cs.ui.ac.id"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "steven-dyanizha-myportofolio.pws.cs.ui.ac.id", ".pws.cs.ui.ac.id", "10.0.2.2"]
 
 PRODUCTION = os.getenv("PRODUCTION", "False").lower() == "true"
 
@@ -42,10 +42,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
-    "rest_framework"
+    "corsheaders",
+    "rest_framework",
+    "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -151,3 +154,22 @@ WHITENOISE_USE_FINDERS = True
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Token auth for mobile clients; session auth stays for the web pages.
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+}
+
+# CORS for Flutter Web: allow all origins locally, restrict in production
+# (set CORS_ALLOWED_ORIGINS="https://your-web-app.example" in .env.prod).
+CORS_ALLOW_ALL_ORIGINS = not PRODUCTION
+if PRODUCTION:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
