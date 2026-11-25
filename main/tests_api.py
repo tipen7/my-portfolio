@@ -138,8 +138,8 @@ class ProjectRolePermissionTest(ProjectAPITestBase):
 
     def test_visitor_can_only_read(self):
         self.assertEqual(self.client.get(self.list_url).status_code, status.HTTP_200_OK)
-        self.assert_write_forbidden(None, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assert_write_forbidden(None, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(self.project.starred_by.count(), 0)
 
     def test_regular_user_can_read_and_star_but_not_write(self):
@@ -270,7 +270,7 @@ class ProjectValidationTest(ProjectAPITestBase):
 
 class ProjectStarTest(ProjectAPITestBase):
     def test_star_requires_login_and_toggles(self):
-        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.post(self.star_url).status_code, status.HTTP_401_UNAUTHORIZED)
         self.client.force_authenticate(user=self.user)
         response = self.client.post(self.star_url)
         self.assertTrue(response.data["is_starred"])
@@ -488,10 +488,9 @@ class ExperienceReadTest(ExperienceAPITestBase):
 
 
 class ExperienceRolePermissionTest(ExperienceAPITestBase):
-    def assert_write_forbidden(self, user):
+    def assert_write_forbidden(self, user, forbidden=status.HTTP_403_FORBIDDEN):
         self.client.force_authenticate(user=user)
         before = self.snapshot()
-        forbidden = status.HTTP_403_FORBIDDEN
         response = self.client.post(self.list_url, self.payload, format="json")
         self.assertEqual(response.status_code, forbidden)
         response = self.client.patch(self.detail_url, {"title": "Changed"}, format="json")
@@ -504,7 +503,7 @@ class ExperienceRolePermissionTest(ExperienceAPITestBase):
 
     def test_visitor_is_rejected_on_write(self):
         self.assertEqual(self.client.get(self.list_url).status_code, status.HTTP_200_OK)
-        self.assert_write_forbidden(None)
+        self.assert_write_forbidden(None, status.HTTP_401_UNAUTHORIZED)
 
     def test_regular_user_is_rejected_on_write(self):
         self.assert_write_forbidden(self.user)
@@ -638,7 +637,7 @@ class ExperienceValidationTest(ExperienceAPITestBase):
 class ExperienceStarTest(ExperienceAPITestBase):
     def test_visitor_cannot_star(self):
         response = self.client.post(self.star_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(self.experience.starred_by.count(), 0)
 
     def test_star_toggles_for_logged_in_user(self):
@@ -683,7 +682,7 @@ class ExperienceCommentAPITest(ExperienceAPITestBase):
         self.assertEqual(response.data[0]["username"], "visitor")
 
         response = self.client.post(self.comment_url, {"text": "Hi"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(Comment.objects.count(), 1)
 
     def test_comment_is_created_then_updated(self):
@@ -760,3 +759,64 @@ class ExperiencePageTest(ExperienceAPITestBase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("main:show_experience"))
         self.assertNotContains(response, 'id="edit-experience-modal"')
+
+
+class TokenAuthAPITest(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_superuser(
+            username="owner", password="test-password", email="owner@example.com",
+        )
+        self.payload = {
+            "name": "Mobile project",
+            "description": "Created from Flutter",
+            "type": "personal",
+            "url": "https://example.com/",
+            "image": "https://example.com/m.jpg",
+            "tech_stack": ["Flutter"],
+        }
+
+    def obtain_token(self, password="test-password"):
+        return self.client.post(
+            reverse("api:token-auth"),
+            {"username": "owner", "password": password},
+            format="json",
+        )
+
+    def test_token_login_and_authenticated_create(self):
+        response = self.obtain_token()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token = response.data["token"]
+
+        response = self.client.post(
+            reverse("api:project-list"), self.payload, format="json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_wrong_password_rejected(self):
+        self.assertEqual(self.obtain_token("wrong").status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_invalid_token_gets_401(self):
+        response = self.client.post(
+            reverse("api:project-list"), self.payload, format="json",
+            HTTP_AUTHORIZATION="Token invalid",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout_revokes_token(self):
+        token = self.obtain_token().data["token"]
+        auth = {"HTTP_AUTHORIZATION": f"Token {token}"}
+        self.assertEqual(
+            self.client.post(reverse("api:logout"), **auth).status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+        self.assertEqual(
+            self.client.post(reverse("api:logout"), **auth).status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_logout_requires_authentication(self):
+        self.assertEqual(
+            self.client.post(reverse("api:logout")).status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
